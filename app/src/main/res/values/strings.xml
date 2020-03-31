@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">Alourt</string>
+    <string name="accessibility_service_description">This permission is only used to allow you to use the volume buttons to trigger an alert message.</string>
+</resources>
