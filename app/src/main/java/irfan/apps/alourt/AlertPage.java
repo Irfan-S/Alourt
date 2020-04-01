@@ -18,6 +18,9 @@ import android.view.View;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+
 public class AlertPage extends AppCompatActivity {
     AudioManager audioM;
     CameraManager mCameraManager;
@@ -31,7 +34,7 @@ public class AlertPage extends AppCompatActivity {
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.alert_page);
+        setContentView(R.layout.activity_alert);
         Log.d(TAG, "Activity launched");
         audioM = (AudioManager) getSystemService(AUDIO_SERVICE);
         Thread thread = new Thread(new Runnable() {
@@ -58,6 +61,13 @@ public class AlertPage extends AppCompatActivity {
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    private void stopAlertBroadcast() {
+        // Write a message to the database
+        FirebaseDatabase database = FirebaseDatabase.getInstance();
+        DatabaseReference myRef = database.getReference("message");
+        myRef.setValue(0);
     }
 
 
@@ -146,6 +156,7 @@ public class AlertPage extends AppCompatActivity {
     public void endNotificationCycle(View v) {
         toggleSwitch = false;
         audioOff();
+        stopAlertBroadcast();
     }
 
 }

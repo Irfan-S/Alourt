@@ -12,7 +12,7 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
-public class MainActivity extends AppCompatActivity {
+public class Home extends AppCompatActivity {
 
 
     //TODO terminate the notif flasher on button press, could create a notifcation that pops up, with a timer of 5 secs, that will trigger if not stopped?
@@ -23,9 +23,11 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         checkAccessibilityPermission();
-        setContentView(R.layout.activity_main);
+        setContentView(R.layout.activity_home);
         disp = findViewById(R.id.key_disp);
         checkAudioPermission();
+
+
     }
 
     private void checkAudioPermission() {

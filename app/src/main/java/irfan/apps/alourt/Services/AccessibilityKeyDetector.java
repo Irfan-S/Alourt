@@ -7,6 +7,14 @@ import android.util.Log;
 import android.view.KeyEvent;
 import android.view.accessibility.AccessibilityEvent;
 
+import androidx.annotation.NonNull;
+
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
+
 import irfan.apps.alourt.AlertPage;
 
 public class AccessibilityKeyDetector extends AccessibilityService {
@@ -14,6 +22,9 @@ public class AccessibilityKeyDetector extends AccessibilityService {
 
     private final String TAG = "AccessKeyDetector";
     private int counter = 0;
+    Intent notifyIntent;
+    FirebaseDatabase database;
+    DatabaseReference myRef;
 
     @Override
     public boolean onKeyEvent(KeyEvent event) {
@@ -43,7 +54,7 @@ public class AccessibilityKeyDetector extends AccessibilityService {
             Log.d(TAG, "Counter after 25 is: " + counter);
         } else if (counter == 5) {
             Log.d(TAG, "Triggering ringtone...");
-            Intent notifyIntent = new Intent(this, AlertPage.class);
+            sendAlertBroadcast();
             notifyIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             getApplicationContext().startActivity(notifyIntent);
             counter = 0;
@@ -55,10 +66,35 @@ public class AccessibilityKeyDetector extends AccessibilityService {
         return super.onKeyEvent(event);
     }
 
+    private void sendAlertBroadcast() {
+        // Write a message to the database
+
+        myRef.setValue(1);
+    }
 
     @Override
     protected void onServiceConnected() {
         Log.i(TAG, "Service connected");
+        // Write a message to the database
+        notifyIntent = new Intent(this, AlertPage.class);
+        database = FirebaseDatabase.getInstance();
+        myRef = database.getReference("message");
+
+        myRef.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                int resp = dataSnapshot.getValue(Integer.class);
+                if (resp == 1) {
+                    notifyIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    getApplicationContext().startActivity(notifyIntent);
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+            }
+        });
 
     }
 
