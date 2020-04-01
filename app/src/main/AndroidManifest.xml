@@ -1,8 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="irfan.apps.alourt">
-    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS"/>
+
+    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
     <uses-feature android:name="android.hardware.camera.flash" />
+
     <uses-permission android:name="android.permission.ACCESS_NOTIFICATION_POLICY" />
     <uses-permission android:name="android.permission.VIBRATE" />
 
@@ -21,14 +23,19 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity
+            android:name=".AlertPage"
+            android:excludeFromRecents="true" />
 
 
-        <service android:name=".Services.AccessibilityKeyDetector"
+        <service
+            android:name=".Services.AccessibilityKeyDetector"
             android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
             <intent-filter>
                 <action android:name="android.accessibilityservice.AccessibilityService" />
             </intent-filter>
-            <meta-data android:name="android.accessibilityservice"
+            <meta-data
+                android:name="android.accessibilityservice"
                 android:resource="@xml/accessibility_layout" />
         </service>
     </application>

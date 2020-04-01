@@ -1,10 +1,7 @@
 package irfan.apps.alourt;
 
-import androidx.appcompat.app.AppCompatActivity;
-
 import android.app.NotificationManager;
 import android.content.Intent;
-import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
@@ -13,7 +10,7 @@ import android.view.KeyEvent;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import java.net.URI;
+import androidx.appcompat.app.AppCompatActivity;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -40,27 +37,27 @@ public class MainActivity extends AppCompatActivity {
                 setContentView(R.layout.enable_permissions_display);
                 Intent intent = new Intent(Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS);
                 intent.addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY);
-                Toast.makeText(this,"Please allow Alourt to modify DND settings, for emergency notifications",Toast.LENGTH_LONG).show();
+                Toast.makeText(this, "Please allow Alourt to modify DND settings, for emergency notifications", Toast.LENGTH_LONG).show();
                 startActivity(intent);
             }
         }
     }
 
     public void checkAccessibilityPermission() {
-        int accessEnabled=0;
+        int accessEnabled = 0;
         try {
             accessEnabled = Settings.Secure.getInt(this.getContentResolver(), Settings.Secure.ACCESSIBILITY_ENABLED);
         } catch (Settings.SettingNotFoundException e) {
             e.printStackTrace();
         }
-        Log.d(TAG,"Accessibility granted: "+accessEnabled);
-        if (accessEnabled==0) {
+        Log.d(TAG, "Accessibility granted: " + accessEnabled);
+        if (accessEnabled == 0) {
             setContentView(R.layout.enable_permissions_display);
             /** if not construct intent to request permission */
             Intent intent = new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS);
             intent.addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY);
             /** request permission via start activity for result */
-            Toast.makeText(this,"Please allow Alourt to have accessibility, for app activation using volume buttons",Toast.LENGTH_LONG).show();
+            Toast.makeText(this, "Please allow Alourt to have accessibility, for app activation using volume buttons", Toast.LENGTH_LONG).show();
             startActivity(intent);
 
         } else {
@@ -71,8 +68,8 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
-        Log.d(TAG,"Key pressed");
-        disp.setText("Key pressed is"+ keyCode);
+        Log.d(TAG, "Key pressed");
+        disp.setText("Key pressed is" + keyCode);
         return true;
 
     }
