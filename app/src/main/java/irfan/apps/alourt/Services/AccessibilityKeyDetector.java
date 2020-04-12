@@ -9,6 +9,8 @@ import android.view.accessibility.AccessibilityEvent;
 
 import androidx.annotation.NonNull;
 
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -75,26 +77,36 @@ public class AccessibilityKeyDetector extends AccessibilityService {
     @Override
     protected void onServiceConnected() {
         Log.i(TAG, "Service connected");
-        // Write a message to the database
-        notifyIntent = new Intent(this, AlertPage.class);
-        database = FirebaseDatabase.getInstance();
-        myRef = database.getReference("message");
 
-        myRef.addValueEventListener(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                int resp = dataSnapshot.getValue(Integer.class);
-                if (resp == 1) {
-                    notifyIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                    getApplicationContext().startActivity(notifyIntent);
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        if (user != null) {
+            String UID = user.getUid();
+            database = FirebaseDatabase.getInstance();
+            myRef = database.getReference("groups");
+            //Extracting user's buckets, that will be notified.
+
+
+            notifyIntent = new Intent(this, AlertPage.class);
+
+            //demo has been set to a fixed id
+            myRef.child("10001").addValueEventListener(new ValueEventListener() {
+                @Override
+                public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                    int resp = dataSnapshot.child("activated").getValue(Integer.class);
+                    if (resp == 1) {
+                        notifyIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                        getApplicationContext().startActivity(notifyIntent);
+                    }
                 }
-            }
 
-            @Override
-            public void onCancelled(@NonNull DatabaseError databaseError) {
+                @Override
+                public void onCancelled(@NonNull DatabaseError databaseError) {
 
-            }
-        });
+                }
+            });
+        } else {
+            Log.d(TAG, "Unable to start Firebase Auth, please retry");
+        }
 
     }
 

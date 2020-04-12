@@ -7,17 +7,40 @@ import android.os.Bundle;
 import android.provider.Settings;
 import android.util.Log;
 import android.view.KeyEvent;
+import android.view.View;
+import android.widget.Button;
+import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
-public class Home extends AppCompatActivity {
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
 
+import irfan.apps.alourt.Handlers.SharedPrefsHandler;
+import irfan.apps.alourt.Handlers.User;
+import irfan.apps.alourt.Services.UIDGeneratorService;
 
-    //TODO terminate the notif flasher on button press, could create a notifcation that pops up, with a timer of 5 secs, that will trigger if not stopped?
+public class Home extends AppCompatActivity implements View.OnClickListener {
+
+    EditText inviteId;
+    Button submitInviteIdButton;
+    Button createGroupButton;
     TextView disp;
+    long mobile;
+    FirebaseUser user;
+    String UID;
+
+    SharedPrefsHandler sph;
+
     private final String TAG = "Test";
+    private final boolean ADMIN_USER = true;
+    private final boolean NOT_ADMIN_USER = false;
+
+    //TODO ask for name input, name isnt available thru phone auth.
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -25,7 +48,15 @@ public class Home extends AppCompatActivity {
         checkAccessibilityPermission();
         setContentView(R.layout.activity_home);
         disp = findViewById(R.id.key_disp);
+        inviteId = findViewById(R.id.inviteId);
+        submitInviteIdButton = findViewById(R.id.inviteIdSubmitButton);
+        createGroupButton = findViewById(R.id.newGroupButton);
+        submitInviteIdButton.setOnClickListener(this);
+        createGroupButton.setOnClickListener(this);
+        sph = new SharedPrefsHandler(getApplicationContext());
         checkAudioPermission();
+        user = FirebaseAuth.getInstance().getCurrentUser();
+        UID = user.getUid();
 
 
     }
@@ -73,6 +104,39 @@ public class Home extends AppCompatActivity {
         Log.d(TAG, "Key pressed");
         disp.setText("Key pressed is" + keyCode);
         return true;
+
+    }
+
+    @Override
+    public void onClick(View v) {
+        //TODO Add a check to prevent NAN and Null inputs
+        switch (v.getId()) {
+            case R.id.inviteIdSubmitButton:
+                String invID = inviteId.getText().toString();
+                mobile = sph.loadMobile();
+                Log.d(TAG, "Clicked " + UID + " and mob: " + mobile);
+                //TODO add sharedprefs to store user details.
+
+                if (UID != null && mobile != 0) {
+                    Log.d(TAG, "Started invite helper");
+                    User nUser = new User(user.getDisplayName(), mobile, NOT_ADMIN_USER);
+                    DatabaseReference dbr = FirebaseDatabase.getInstance().getReference("groups");
+                    dbr.child(invID).child("members").child(UID).setValue(nUser);
+                    Toast.makeText(this, "Successfully joined group", Toast.LENGTH_LONG).show();
+                }
+                break;
+            case R.id.newGroupButton:
+                UIDGeneratorService uid = new UIDGeneratorService(this);
+                String GroupID = uid.generateRandom();
+                if (UID != null && mobile != 0) {
+                    User nUser = new User(user.getDisplayName(), mobile, ADMIN_USER);
+                    DatabaseReference dbr = FirebaseDatabase.getInstance().getReference("groups");
+                    dbr.child(GroupID).child("members").child(UID).setValue(nUser);
+                    dbr.child(GroupID).child("activated").setValue(0);
+                }
+
+        }
+
 
     }
 }

@@ -26,6 +26,8 @@ import com.google.firebase.auth.PhoneAuthProvider;
 
 import java.util.concurrent.TimeUnit;
 
+import irfan.apps.alourt.Handlers.SharedPrefsHandler;
+
 public class Login extends AppCompatActivity implements View.OnClickListener {
 
     private final String TAG = "LoginAlourt";
@@ -51,6 +53,8 @@ public class Login extends AppCompatActivity implements View.OnClickListener {
 
     private ViewGroup mPhoneNumberViews;
 
+
+    private SharedPrefsHandler sph;
 
     private EditText mPhoneNumberField;
     private EditText mVerificationField;
@@ -83,6 +87,8 @@ public class Login extends AppCompatActivity implements View.OnClickListener {
         mStartButton.setOnClickListener(this);
         mVerifyButton.setOnClickListener(this);
         mResendButton.setOnClickListener(this);
+
+        sph = new SharedPrefsHandler(getApplicationContext());
 
 
         // [START initialize_auth]
@@ -194,6 +200,7 @@ public class Login extends AppCompatActivity implements View.OnClickListener {
 
 
     private void startPhoneNumberVerification(String phoneNumber) {
+        sph.saveMobile(Long.parseLong(phoneNumber));
         // [START start_phone_auth]
         PhoneAuthProvider.getInstance().verifyPhoneNumber(
                 phoneNumber,        // Phone number to verify

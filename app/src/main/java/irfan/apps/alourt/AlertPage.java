@@ -22,6 +22,10 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 
 public class AlertPage extends AppCompatActivity {
+
+    //TODO create an SMS service that sends the bucket(s) the user is attached to as a body. Which is then used later on by Alourt's server. Sending credentials could be vulnerable.
+    //TODO requires a bucket name generator, that has to be randomized, and given an internal name.
+
     AudioManager audioM;
     CameraManager mCameraManager;
     public static final String NOTIFICATION_CHANNEL_ID = "1201";
