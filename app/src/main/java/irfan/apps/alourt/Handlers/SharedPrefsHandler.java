@@ -2,6 +2,11 @@ package irfan.apps.alourt.Handlers;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.util.Log;
+
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Set;
 
 public class SharedPrefsHandler {
 
@@ -20,6 +25,7 @@ public class SharedPrefsHandler {
                 mobile);
         myEdit.apply();
     }
+    // TODO save name
 
     public long loadMobile() {
         return sharedPreferences.getLong("mobile", 0);
@@ -27,16 +33,27 @@ public class SharedPrefsHandler {
 
     //TODO determine how exactly to bucketize
     public void addBucketID(String bucket) {
-        String value = sharedPreferences.getString("bucket", "");
-        String appendValue = value + ";" + bucket;
+        ArrayList<String> buckets = retrieveBuckets();
+        buckets.add(bucket);
         SharedPreferences.Editor myEdit
                 = sharedPreferences.edit();
-        myEdit.putString(
-                "bucket",
-                appendValue);
+        Set<String> set = new HashSet<String>();
+        set.addAll(buckets);
+        myEdit.putStringSet("bucket", set);
         myEdit.apply();
+        Log.d("storesharedPreferences", "" + set);
+
     }
 
-    //public ArrayList<String> retrieveBucketID(S)
+    public ArrayList<String> retrieveBuckets() {
+        Set<String> set = sharedPreferences.getStringSet("bucket", null);
+        ArrayList<String> buckets = new ArrayList<>();
+        if (set != null) {
+            buckets.addAll(set);
+        }
+        Log.d("retrive", "" + set);
+        return buckets;
+
+    }
 
 }

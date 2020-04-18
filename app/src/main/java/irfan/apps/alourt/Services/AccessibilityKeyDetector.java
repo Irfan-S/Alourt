@@ -17,7 +17,10 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
+import java.util.ArrayList;
+
 import irfan.apps.alourt.AlertPage;
+import irfan.apps.alourt.Handlers.SharedPrefsHandler;
 
 public class AccessibilityKeyDetector extends AccessibilityService {
 
@@ -27,6 +30,8 @@ public class AccessibilityKeyDetector extends AccessibilityService {
     Intent notifyIntent;
     FirebaseDatabase database;
     DatabaseReference myRef;
+
+    SharedPrefsHandler sph;
 
     @Override
     public boolean onKeyEvent(KeyEvent event) {
@@ -78,6 +83,8 @@ public class AccessibilityKeyDetector extends AccessibilityService {
     protected void onServiceConnected() {
         Log.i(TAG, "Service connected");
 
+        sph = new SharedPrefsHandler(getApplicationContext());
+
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
         if (user != null) {
             String UID = user.getUid();
@@ -88,22 +95,44 @@ public class AccessibilityKeyDetector extends AccessibilityService {
 
             notifyIntent = new Intent(this, AlertPage.class);
 
-            //demo has been set to a fixed id
-            myRef.child("10001").addValueEventListener(new ValueEventListener() {
-                @Override
-                public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                    int resp = dataSnapshot.child("activated").getValue(Integer.class);
-                    if (resp == 1) {
-                        notifyIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                        getApplicationContext().startActivity(notifyIntent);
+            ArrayList<String> buckets = sph.retrieveBuckets();
+
+            for (final String bucket : buckets) {
+                Log.d(TAG, "Attaching listener for" + bucket);
+                myRef.child(bucket).addValueEventListener(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                        int resp = dataSnapshot.child("activated").getValue(Integer.class);
+                        if (resp == 1) {
+                            notifyIntent.putExtra("bucket_name", bucket);
+                            notifyIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                            getApplicationContext().startActivity(notifyIntent);
+                        }
                     }
-                }
 
-                @Override
-                public void onCancelled(@NonNull DatabaseError databaseError) {
+                    @Override
+                    public void onCancelled(@NonNull DatabaseError databaseError) {
 
-                }
-            });
+                    }
+                });
+            }
+
+            //demo has been set to a fixed id
+//            myRef.child("10001").addValueEventListener(new ValueEventListener() {
+//                @Override
+//                public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+//                    int resp = dataSnapshot.child("activated").getValue(Integer.class);
+//                    if (resp == 1) {
+//                        notifyIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+//                        getApplicationContext().startActivity(notifyIntent);
+//                    }
+//                }
+//
+//                @Override
+//                public void onCancelled(@NonNull DatabaseError databaseError) {
+//
+//                }
+//            });
         } else {
             Log.d(TAG, "Unable to start Firebase Auth, please retry");
         }

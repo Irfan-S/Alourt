@@ -15,6 +15,7 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DatabaseReference;
@@ -28,8 +29,11 @@ public class Home extends AppCompatActivity implements View.OnClickListener {
 
     EditText inviteId;
     Button submitInviteIdButton;
+    Button submitNameButton;
+    EditText nameEdit;
     Button createGroupButton;
     TextView disp;
+    String name;
     long mobile;
     FirebaseUser user;
     String UID;
@@ -51,12 +55,16 @@ public class Home extends AppCompatActivity implements View.OnClickListener {
         inviteId = findViewById(R.id.inviteId);
         submitInviteIdButton = findViewById(R.id.inviteIdSubmitButton);
         createGroupButton = findViewById(R.id.newGroupButton);
+        submitNameButton = findViewById(R.id.nameEnterButton);
+        nameEdit = findViewById(R.id.name_edit);
         submitInviteIdButton.setOnClickListener(this);
         createGroupButton.setOnClickListener(this);
+        submitNameButton.setOnClickListener(this);
         sph = new SharedPrefsHandler(getApplicationContext());
         checkAudioPermission();
         user = FirebaseAuth.getInstance().getCurrentUser();
         UID = user.getUid();
+        mobile = sph.loadMobile();
 
 
     }
@@ -112,28 +120,43 @@ public class Home extends AppCompatActivity implements View.OnClickListener {
         //TODO Add a check to prevent NAN and Null inputs
         switch (v.getId()) {
             case R.id.inviteIdSubmitButton:
-                String invID = inviteId.getText().toString();
+                final String invID = inviteId.getText().toString();
                 mobile = sph.loadMobile();
                 Log.d(TAG, "Clicked " + UID + " and mob: " + mobile);
                 //TODO add sharedprefs to store user details.
-
-                if (UID != null && mobile != 0) {
+                if (UID != null && mobile != 0 && name != null) {
                     Log.d(TAG, "Started invite helper");
-                    User nUser = new User(user.getDisplayName(), mobile, NOT_ADMIN_USER);
+                    User nUser = new User(name, mobile, NOT_ADMIN_USER);
                     DatabaseReference dbr = FirebaseDatabase.getInstance().getReference("groups");
-                    dbr.child(invID).child("members").child(UID).setValue(nUser);
+                    dbr.child(invID).child("members").child(UID).setValue(nUser).addOnSuccessListener(new OnSuccessListener<Void>() {
+                        @Override
+                        public void onSuccess(Void aVoid) {
+                            sph.addBucketID(invID);
+                        }
+                    });
                     Toast.makeText(this, "Successfully joined group", Toast.LENGTH_LONG).show();
                 }
                 break;
             case R.id.newGroupButton:
                 UIDGeneratorService uid = new UIDGeneratorService(this);
-                String GroupID = uid.generateRandom();
-                if (UID != null && mobile != 0) {
-                    User nUser = new User(user.getDisplayName(), mobile, ADMIN_USER);
+                final String GroupID = uid.generateRandom();
+                Log.d(TAG, "New group initiated " + UID + " " + mobile + " " + name);
+                if (UID != null && mobile != 0 && name != null) {
+                    User nUser = new User(name, mobile, ADMIN_USER);
                     DatabaseReference dbr = FirebaseDatabase.getInstance().getReference("groups");
-                    dbr.child(GroupID).child("members").child(UID).setValue(nUser);
+                    dbr.child(GroupID).child("members").child(UID).setValue(nUser).addOnSuccessListener(new OnSuccessListener<Void>() {
+                        @Override
+                        public void onSuccess(Void aVoid) {
+                            sph.addBucketID(GroupID);
+                        }
+                    });
                     dbr.child(GroupID).child("activated").setValue(0);
                 }
+                break;
+            case R.id.nameEnterButton:
+                name = nameEdit.getText().toString();
+                Toast.makeText(this, "Name set", Toast.LENGTH_LONG).show();
+
 
         }
 

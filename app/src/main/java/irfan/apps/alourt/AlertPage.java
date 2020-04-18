@@ -1,5 +1,6 @@
 package irfan.apps.alourt;
 
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.hardware.Camera;
 import android.hardware.camera2.CameraAccessException;
@@ -14,6 +15,7 @@ import android.os.VibrationEffect;
 import android.os.Vibrator;
 import android.util.Log;
 import android.view.View;
+import android.widget.TextView;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
@@ -28,6 +30,7 @@ public class AlertPage extends AppCompatActivity {
 
     AudioManager audioM;
     CameraManager mCameraManager;
+    TextView dispTxt;
     public static final String NOTIFICATION_CHANNEL_ID = "1201";
     MediaPlayer mp;
     android.hardware.Camera mCamera;
@@ -39,6 +42,11 @@ public class AlertPage extends AppCompatActivity {
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_alert);
+        Intent in = getIntent();
+        dispTxt = findViewById(R.id.alertText);
+        String group = in.getStringExtra("bucket_name");
+        dispTxt.setText("Someone from " + group + " needs help");
+
         Log.d(TAG, "Activity launched");
         audioM = (AudioManager) getSystemService(AUDIO_SERVICE);
         Thread thread = new Thread(new Runnable() {
