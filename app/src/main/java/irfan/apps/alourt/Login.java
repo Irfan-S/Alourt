@@ -1,13 +1,17 @@
 package irfan.apps.alourt;
 
+import android.app.NotificationManager;
 import android.content.Intent;
+import android.os.Build;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -66,6 +70,7 @@ public class Login extends AppCompatActivity implements View.OnClickListener {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
         setContentView(R.layout.activity_login);
 
         // Restore instance state
@@ -95,6 +100,9 @@ public class Login extends AppCompatActivity implements View.OnClickListener {
         // Initialize Firebase Auth
         mAuth = FirebaseAuth.getInstance();
         // [END initialize_auth]
+
+        checkAccessibilityPermission();
+        checkAudioPermission();
 
         // Initialize phone auth callbacks
         // [START phone_auth_callbacks]
@@ -196,6 +204,43 @@ public class Login extends AppCompatActivity implements View.OnClickListener {
     protected void onRestoreInstanceState(Bundle savedInstanceState) {
         super.onRestoreInstanceState(savedInstanceState);
         mVerificationInProgress = savedInstanceState.getBoolean(KEY_VERIFY_IN_PROGRESS);
+    }
+
+    private void checkAudioPermission() {
+        NotificationManager mNotificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+
+        // Check if the notification policy access has been granted for the app.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            if (!mNotificationManager.isNotificationPolicyAccessGranted()) {
+                setContentView(R.layout.enable_permissions_display);
+                Intent intent = new Intent(Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS);
+                intent.addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY);
+                Toast.makeText(this, "Please allow Alourt to modify DND settings, for emergency notifications", Toast.LENGTH_LONG).show();
+                startActivity(intent);
+            }
+        }
+    }
+
+    public void checkAccessibilityPermission() {
+        int accessEnabled = 0;
+        try {
+            accessEnabled = Settings.Secure.getInt(this.getContentResolver(), Settings.Secure.ACCESSIBILITY_ENABLED);
+        } catch (Settings.SettingNotFoundException e) {
+            e.printStackTrace();
+        }
+        Log.d(TAG, "Accessibility granted: " + accessEnabled);
+        if (accessEnabled == 0) {
+            setContentView(R.layout.enable_permissions_display);
+            /** if not construct intent to request permission */
+            Intent intent = new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS);
+            intent.addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY);
+            /** request permission via start activity for result */
+            Toast.makeText(this, "Please allow Alourt to have accessibility, for app activation using volume buttons", Toast.LENGTH_LONG).show();
+            startActivity(intent);
+
+        } else {
+            setContentView(R.layout.activity_home);
+        }
     }
 
 
@@ -338,8 +383,16 @@ public class Login extends AppCompatActivity implements View.OnClickListener {
         } else {
             // Signed in
             //mPhoneNumberViews.setVisibility(View.GONE);
-            startActivity(new Intent(this, Home.class));
-            finish();
+            EditText nameEdit = findViewById(R.id.name_edit);
+            String name = nameEdit.getText().toString();
+            if (name != null && !name.isEmpty()) {
+                SharedPrefsHandler sph = new SharedPrefsHandler(getApplicationContext());
+                sph.saveName(name);
+                startActivity(new Intent(this, Home.class));
+                finish();
+            } else {
+                Toast.makeText(this, "Please enter a valid name", Toast.LENGTH_LONG).show();
+            }
             //enableViews(mPhoneNumberField, mVerificationField);
             //mPhoneNumberField.setText(null);
             //mVerificationField.setText(null);

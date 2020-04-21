@@ -23,6 +23,10 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 
+import java.util.ArrayList;
+
+import irfan.apps.alourt.Handlers.SharedPrefsHandler;
+
 public class AlertPage extends AppCompatActivity {
 
     //TODO create an SMS service that sends the bucket(s) the user is attached to as a body. Which is then used later on by Alourt's server. Sending credentials could be vulnerable.
@@ -37,6 +41,7 @@ public class AlertPage extends AppCompatActivity {
     android.hardware.Camera.Parameters parameters;
     private final String TAG = "AlertPage";
     private boolean toggleSwitch = true;
+    SharedPrefsHandler sph;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -46,7 +51,7 @@ public class AlertPage extends AppCompatActivity {
         dispTxt = findViewById(R.id.alertText);
         String group = in.getStringExtra("bucket_name");
         dispTxt.setText("Someone from " + group + " needs help");
-
+        sph = new SharedPrefsHandler(getApplicationContext());
         Log.d(TAG, "Activity launched");
         audioM = (AudioManager) getSystemService(AUDIO_SERVICE);
         Thread thread = new Thread(new Runnable() {
@@ -77,9 +82,12 @@ public class AlertPage extends AppCompatActivity {
 
     private void stopAlertBroadcast() {
         // Write a message to the database
+        ArrayList<String> buckets = sph.retrieveBuckets();
         FirebaseDatabase database = FirebaseDatabase.getInstance();
-        DatabaseReference myRef = database.getReference("message");
-        myRef.setValue(0);
+        DatabaseReference myRef = database.getReference("groups");
+        for (String bucket : buckets) {
+            myRef.child(bucket).child("activated").setValue(0);
+        }
     }
 
 

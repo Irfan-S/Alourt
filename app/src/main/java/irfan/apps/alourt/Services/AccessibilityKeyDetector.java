@@ -30,6 +30,7 @@ public class AccessibilityKeyDetector extends AccessibilityService {
     Intent notifyIntent;
     FirebaseDatabase database;
     DatabaseReference myRef;
+    ArrayList<String> buckets;
 
     SharedPrefsHandler sph;
 
@@ -75,8 +76,9 @@ public class AccessibilityKeyDetector extends AccessibilityService {
 
     private void sendAlertBroadcast() {
         // Write a message to the database
-
-        myRef.setValue(1);
+        for (String bucket : buckets) {
+            myRef.child(bucket).child("activated").setValue(1);
+        }
     }
 
     @Override
@@ -87,7 +89,6 @@ public class AccessibilityKeyDetector extends AccessibilityService {
 
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
         if (user != null) {
-            String UID = user.getUid();
             database = FirebaseDatabase.getInstance();
             myRef = database.getReference("groups");
             //Extracting user's buckets, that will be notified.
@@ -95,14 +96,20 @@ public class AccessibilityKeyDetector extends AccessibilityService {
 
             notifyIntent = new Intent(this, AlertPage.class);
 
-            ArrayList<String> buckets = sph.retrieveBuckets();
+            buckets = sph.retrieveBuckets();
+            Log.d(TAG, "Buckets are: " + buckets.toString());
 
             for (final String bucket : buckets) {
                 Log.d(TAG, "Attaching listener for" + bucket);
                 myRef.child(bucket).addValueEventListener(new ValueEventListener() {
                     @Override
                     public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                        int resp = dataSnapshot.child("activated").getValue(Integer.class);
+                        int resp = 0;
+                        try {
+                            resp = dataSnapshot.child("activated").getValue(Integer.class);
+                        } catch (NullPointerException e) {
+                            e.printStackTrace();
+                        }
                         if (resp == 1) {
                             notifyIntent.putExtra("bucket_name", bucket);
                             notifyIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);

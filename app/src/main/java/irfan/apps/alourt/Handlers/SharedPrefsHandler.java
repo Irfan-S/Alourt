@@ -25,13 +25,23 @@ public class SharedPrefsHandler {
                 mobile);
         myEdit.apply();
     }
-    // TODO save name
 
+    public void saveName(String name) {
+        SharedPreferences.Editor myEdit
+                = sharedPreferences.edit();
+        myEdit.putString(
+                "name",
+                name);
+        myEdit.apply();
+    }
+
+    public String loadName() {
+        return sharedPreferences.getString("name", "");
+    }
     public long loadMobile() {
         return sharedPreferences.getLong("mobile", 0);
     }
 
-    //TODO determine how exactly to bucketize
     public void addBucketID(String bucket) {
         ArrayList<String> buckets = retrieveBuckets();
         buckets.add(bucket);
@@ -53,7 +63,6 @@ public class SharedPrefsHandler {
         }
         Log.d("retrive", "" + set);
         return buckets;
-
     }
 
 }

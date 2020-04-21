@@ -1,10 +1,6 @@
 package irfan.apps.alourt;
 
-import android.app.NotificationManager;
-import android.content.Intent;
-import android.os.Build;
 import android.os.Bundle;
-import android.provider.Settings;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
@@ -29,8 +25,8 @@ public class Home extends AppCompatActivity implements View.OnClickListener {
 
     EditText inviteId;
     Button submitInviteIdButton;
-    Button submitNameButton;
-    EditText nameEdit;
+    //Button submitNameButton;
+    //EditText nameEdit;
     Button createGroupButton;
     TextView disp;
     String name;
@@ -44,67 +40,66 @@ public class Home extends AppCompatActivity implements View.OnClickListener {
     private final boolean ADMIN_USER = true;
     private final boolean NOT_ADMIN_USER = false;
 
-    //TODO ask for name input, name isnt available thru phone auth.
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        checkAccessibilityPermission();
         setContentView(R.layout.activity_home);
+
         disp = findViewById(R.id.key_disp);
         inviteId = findViewById(R.id.inviteId);
         submitInviteIdButton = findViewById(R.id.inviteIdSubmitButton);
         createGroupButton = findViewById(R.id.newGroupButton);
-        submitNameButton = findViewById(R.id.nameEnterButton);
-        nameEdit = findViewById(R.id.name_edit);
+
         submitInviteIdButton.setOnClickListener(this);
         createGroupButton.setOnClickListener(this);
-        submitNameButton.setOnClickListener(this);
+
         sph = new SharedPrefsHandler(getApplicationContext());
-        checkAudioPermission();
+
         user = FirebaseAuth.getInstance().getCurrentUser();
         UID = user.getUid();
+        name = sph.loadName();
         mobile = sph.loadMobile();
 
 
     }
 
-    private void checkAudioPermission() {
-        NotificationManager mNotificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-
-        // Check if the notification policy access has been granted for the app.
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            if (!mNotificationManager.isNotificationPolicyAccessGranted()) {
-                setContentView(R.layout.enable_permissions_display);
-                Intent intent = new Intent(Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS);
-                intent.addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY);
-                Toast.makeText(this, "Please allow Alourt to modify DND settings, for emergency notifications", Toast.LENGTH_LONG).show();
-                startActivity(intent);
-            }
-        }
-    }
-
-    public void checkAccessibilityPermission() {
-        int accessEnabled = 0;
-        try {
-            accessEnabled = Settings.Secure.getInt(this.getContentResolver(), Settings.Secure.ACCESSIBILITY_ENABLED);
-        } catch (Settings.SettingNotFoundException e) {
-            e.printStackTrace();
-        }
-        Log.d(TAG, "Accessibility granted: " + accessEnabled);
-        if (accessEnabled == 0) {
-            setContentView(R.layout.enable_permissions_display);
-            /** if not construct intent to request permission */
-            Intent intent = new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS);
-            intent.addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY);
-            /** request permission via start activity for result */
-            Toast.makeText(this, "Please allow Alourt to have accessibility, for app activation using volume buttons", Toast.LENGTH_LONG).show();
-            startActivity(intent);
-
-        } else {
-
-        }
-    }
+//    private void checkAudioPermission() {
+//        NotificationManager mNotificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+//
+//        // Check if the notification policy access has been granted for the app.
+//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+//            if (!mNotificationManager.isNotificationPolicyAccessGranted()) {
+//                setContentView(R.layout.enable_permissions_display);
+//                Intent intent = new Intent(Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS);
+//                intent.addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY);
+//                Toast.makeText(this, "Please allow Alourt to modify DND settings, for emergency notifications", Toast.LENGTH_LONG).show();
+//                startActivity(intent);
+//            }
+//        }
+//    }
+//
+//    public void checkAccessibilityPermission() {
+//        int accessEnabled = 0;
+//        try {
+//            accessEnabled = Settings.Secure.getInt(this.getContentResolver(), Settings.Secure.ACCESSIBILITY_ENABLED);
+//        } catch (Settings.SettingNotFoundException e) {
+//            e.printStackTrace();
+//        }
+//        Log.d(TAG, "Accessibility granted: " + accessEnabled);
+//        if (accessEnabled == 0) {
+//            setContentView(R.layout.enable_permissions_display);
+//            /** if not construct intent to request permission */
+//            Intent intent = new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS);
+//            intent.addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY);
+//            /** request permission via start activity for result */
+//            Toast.makeText(this, "Please allow Alourt to have accessibility, for app activation using volume buttons", Toast.LENGTH_LONG).show();
+//            startActivity(intent);
+//
+//        } else {
+//            setContentView(R.layout.activity_home);
+//        }
+//    }
 
 
     @Override
@@ -153,9 +148,6 @@ public class Home extends AppCompatActivity implements View.OnClickListener {
                     dbr.child(GroupID).child("activated").setValue(0);
                 }
                 break;
-            case R.id.nameEnterButton:
-                name = nameEdit.getText().toString();
-                Toast.makeText(this, "Name set", Toast.LENGTH_LONG).show();
 
 
         }
