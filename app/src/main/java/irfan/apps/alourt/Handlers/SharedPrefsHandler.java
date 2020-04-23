@@ -8,11 +8,15 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
 
+import irfan.apps.alourt.R;
+
 public class SharedPrefsHandler {
 
     private SharedPreferences sharedPreferences;
+    private Context context;
 
     public SharedPrefsHandler(Context context) {
+        this.context = context;
         sharedPreferences = context.getSharedPreferences("AlourtData",
                 Context.MODE_PRIVATE);
     }
@@ -35,11 +39,24 @@ public class SharedPrefsHandler {
         myEdit.apply();
     }
 
+    public void saveUID(String UID) {
+        SharedPreferences.Editor myEdit
+                = sharedPreferences.edit();
+        myEdit.putString(
+                "UID",
+                UID);
+        myEdit.apply();
+    }
+
     public String loadName() {
-        return sharedPreferences.getString("name", "");
+        return sharedPreferences.getString(context.getString(R.string.username_sharedpreferences), "");
     }
     public long loadMobile() {
-        return sharedPreferences.getLong("mobile", 0);
+        return sharedPreferences.getLong(context.getString(R.string.mobile_sharedpreferences), 0);
+    }
+
+    public String loadUID() {
+        return sharedPreferences.getString(context.getString(R.string.UID_sharedpreferences), "");
     }
 
     public void addBucketID(String bucket) {
@@ -49,14 +66,14 @@ public class SharedPrefsHandler {
                 = sharedPreferences.edit();
         Set<String> set = new HashSet<String>();
         set.addAll(buckets);
-        myEdit.putStringSet("bucket", set);
+        myEdit.putStringSet(context.getString(R.string.userGroupSet_sharedpreferences), set);
         myEdit.apply();
         Log.d("storesharedPreferences", "" + set);
 
     }
 
     public ArrayList<String> retrieveBuckets() {
-        Set<String> set = sharedPreferences.getStringSet("bucket", null);
+        Set<String> set = sharedPreferences.getStringSet(context.getString(R.string.userGroupSet_sharedpreferences), null);
         ArrayList<String> buckets = new ArrayList<>();
         if (set != null) {
             buckets.addAll(set);

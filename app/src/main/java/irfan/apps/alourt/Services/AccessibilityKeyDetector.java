@@ -21,6 +21,7 @@ import java.util.ArrayList;
 
 import irfan.apps.alourt.AlertPage;
 import irfan.apps.alourt.Handlers.SharedPrefsHandler;
+import irfan.apps.alourt.R;
 
 public class AccessibilityKeyDetector extends AccessibilityService {
 
@@ -35,20 +36,28 @@ public class AccessibilityKeyDetector extends AccessibilityService {
     SharedPrefsHandler sph;
 
     @Override
-    public boolean onKeyEvent(KeyEvent event) {
+    public boolean onKeyEvent(final KeyEvent event) {
         Log.d(TAG, "Key pressed via accessibility is: " + event.getKeyCode() + " and counter is: " + counter);
-
-
         //To trigger, press vol up, vol down and vol up again. Need a wait system that will wait for input within the next 2 seconds, or it will just reset
 
         if (counter % 2 == 0 && event.getKeyCode() == 24) {
             counter += 1;
             Log.d(TAG, "Counter after 24 is: " + counter);
-            new CountDownTimer(2000, 1000) {
+            new CountDownTimer(2000, 100) {
 
                 @Override
                 public void onTick(long millisUntilFinished) {
-
+                    if (counter % 2 == 1 && event.getKeyCode() == 25) {
+                        counter += 2;
+                        Log.d(TAG, "Counter after 25 is: " + counter);
+                    } else if (counter == 5) {
+                        Log.d(TAG, "Triggering ringtone...");
+                        sendAlertBroadcast();
+                        notifyIntent.putExtra(getString(R.string.isCreator_IntentPackage), true);
+                        notifyIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                        getApplicationContext().startActivity(notifyIntent);
+                        counter = 0;
+                    }
                 }
 
                 @Override
@@ -57,16 +66,19 @@ public class AccessibilityKeyDetector extends AccessibilityService {
                     counter = 0;
                 }
             }.start();
-        } else if (counter % 2 == 1 && event.getKeyCode() == 25) {
-            counter += 2;
-            Log.d(TAG, "Counter after 25 is: " + counter);
-        } else if (counter == 5) {
-            Log.d(TAG, "Triggering ringtone...");
-            sendAlertBroadcast();
-            notifyIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            getApplicationContext().startActivity(notifyIntent);
-            counter = 0;
-        } else if (counter > 1) {
+        }
+//        } else if (counter % 2 == 1 && event.getKeyCode() == 25) {
+//            counter += 2;
+//            Log.d(TAG, "Counter after 25 is: " + counter);
+//        } else if (counter == 5) {
+//            Log.d(TAG, "Triggering ringtone...");
+//            sendAlertBroadcast();
+//            notifyIntent.putExtra(getString(R.string.isCreator_IntentPackage),true);
+//            notifyIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+//            getApplicationContext().startActivity(notifyIntent);
+//            counter = 0;
+//        }
+        else if (counter > 1) {
             Log.d(TAG, "Resetting due to invalid trigger");
             counter = 0;
         }
@@ -74,10 +86,13 @@ public class AccessibilityKeyDetector extends AccessibilityService {
         return super.onKeyEvent(event);
     }
 
+    /**
+     * Sends alert message to firebase thru "activated" node for all groups the user is a part of. Attaches mobile number into node.
+     */
     private void sendAlertBroadcast() {
         // Write a message to the database
         for (String bucket : buckets) {
-            myRef.child(bucket).child("activated").setValue(1);
+            myRef.child(bucket).child(getString(R.string.activated_Firebase)).setValue(sph.loadMobile());
         }
     }
 
@@ -90,9 +105,7 @@ public class AccessibilityKeyDetector extends AccessibilityService {
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
         if (user != null) {
             database = FirebaseDatabase.getInstance();
-            myRef = database.getReference("groups");
-            //Extracting user's buckets, that will be notified.
-
+            myRef = database.getReference(getString(R.string.groups_Firebase));
 
             notifyIntent = new Intent(this, AlertPage.class);
 
@@ -106,12 +119,14 @@ public class AccessibilityKeyDetector extends AccessibilityService {
                     public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                         int resp = 0;
                         try {
-                            resp = dataSnapshot.child("activated").getValue(Integer.class);
+                            resp = dataSnapshot.child(getString(R.string.activated_Firebase)).getValue(Integer.class);
                         } catch (NullPointerException e) {
                             e.printStackTrace();
                         }
-                        if (resp == 1) {
-                            notifyIntent.putExtra("bucket_name", bucket);
+                        if (resp != 0) {
+                            notifyIntent.putExtra(getString(R.string.group_name_IntentPackage), bucket);
+                            notifyIntent.putExtra(getString(R.string.mobile_IntentPackage), resp);
+                            notifyIntent.putExtra(getString(R.string.isCreator_IntentPackage), false);
                             notifyIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                             getApplicationContext().startActivity(notifyIntent);
                         }

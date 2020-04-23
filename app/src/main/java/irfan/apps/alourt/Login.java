@@ -58,10 +58,11 @@ public class Login extends AppCompatActivity implements View.OnClickListener {
     private ViewGroup mPhoneNumberViews;
 
 
-    private SharedPrefsHandler sph;
+    private SharedPrefsHandler sharedPreferencesHandler;
 
     private EditText mPhoneNumberField;
     private EditText mVerificationField;
+    private EditText nameEdit;
 
     private Button mStartButton;
     private Button mVerifyButton;
@@ -83,6 +84,7 @@ public class Login extends AppCompatActivity implements View.OnClickListener {
 
         mPhoneNumberField = findViewById(R.id.fieldPhoneNumber);
         mVerificationField = findViewById(R.id.fieldVerificationCode);
+        nameEdit = findViewById(R.id.name_edit);
 
         mStartButton = findViewById(R.id.buttonStartVerification);
         mVerifyButton = findViewById(R.id.buttonVerifyPhone);
@@ -93,7 +95,7 @@ public class Login extends AppCompatActivity implements View.OnClickListener {
         mVerifyButton.setOnClickListener(this);
         mResendButton.setOnClickListener(this);
 
-        sph = new SharedPrefsHandler(getApplicationContext());
+        sharedPreferencesHandler = new SharedPrefsHandler(getApplicationContext());
 
 
         // [START initialize_auth]
@@ -176,7 +178,6 @@ public class Login extends AppCompatActivity implements View.OnClickListener {
         };
         // [END phone_auth_callbacks]
     }
-
     // [START on_start_check_user]
     @Override
     public void onStart() {
@@ -212,7 +213,6 @@ public class Login extends AppCompatActivity implements View.OnClickListener {
         // Check if the notification policy access has been granted for the app.
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             if (!mNotificationManager.isNotificationPolicyAccessGranted()) {
-                setContentView(R.layout.enable_permissions_display);
                 Intent intent = new Intent(Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS);
                 intent.addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY);
                 Toast.makeText(this, "Please allow Alourt to modify DND settings, for emergency notifications", Toast.LENGTH_LONG).show();
@@ -230,22 +230,18 @@ public class Login extends AppCompatActivity implements View.OnClickListener {
         }
         Log.d(TAG, "Accessibility granted: " + accessEnabled);
         if (accessEnabled == 0) {
-            setContentView(R.layout.enable_permissions_display);
             /** if not construct intent to request permission */
             Intent intent = new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS);
             intent.addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY);
             /** request permission via start activity for result */
             Toast.makeText(this, "Please allow Alourt to have accessibility, for app activation using volume buttons", Toast.LENGTH_LONG).show();
             startActivity(intent);
-
-        } else {
-            setContentView(R.layout.activity_home);
         }
     }
 
 
     private void startPhoneNumberVerification(String phoneNumber) {
-        sph.saveMobile(Long.parseLong(phoneNumber));
+        sharedPreferencesHandler.saveMobile(Long.parseLong(phoneNumber));
         // [START start_phone_auth]
         PhoneAuthProvider.getInstance().verifyPhoneNumber(
                 phoneNumber,        // Phone number to verify
@@ -311,6 +307,7 @@ public class Login extends AppCompatActivity implements View.OnClickListener {
     }
     // [END sign_in_with_phone]
 
+    //Sign out is disabled, as users should not be able to use more than one account per device.
     private void signOut() {
         mAuth.signOut();
         updateUI(STATE_INITIALIZED);
@@ -370,6 +367,7 @@ public class Login extends AppCompatActivity implements View.OnClickListener {
                 break;
             case STATE_SIGNIN_FAILED:
                 // No-op, handled by sign-in check
+                Toast.makeText(this, "Sign in failed", Toast.LENGTH_LONG).show();
                 Log.d(TAG, "Login failed");
                 break;
             case STATE_SIGNIN_SUCCESS:
@@ -381,21 +379,18 @@ public class Login extends AppCompatActivity implements View.OnClickListener {
             // Signed out
             mPhoneNumberViews.setVisibility(View.VISIBLE);
         } else {
-            // Signed in
-            //mPhoneNumberViews.setVisibility(View.GONE);
-            EditText nameEdit = findViewById(R.id.name_edit);
+
+            //Extracting user name, and storing data using Preferences handler.
             String name = nameEdit.getText().toString();
             if (name != null && !name.isEmpty()) {
-                SharedPrefsHandler sph = new SharedPrefsHandler(getApplicationContext());
-                sph.saveName(name);
+                SharedPrefsHandler sharedPreferencesHandler = new SharedPrefsHandler(getApplicationContext());
+                sharedPreferencesHandler.saveName(name);
+                sharedPreferencesHandler.saveUID(user.getUid());
                 startActivity(new Intent(this, Home.class));
                 finish();
             } else {
                 Toast.makeText(this, "Please enter a valid name", Toast.LENGTH_LONG).show();
             }
-            //enableViews(mPhoneNumberField, mVerificationField);
-            //mPhoneNumberField.setText(null);
-            //mVerificationField.setText(null);
         }
     }
 

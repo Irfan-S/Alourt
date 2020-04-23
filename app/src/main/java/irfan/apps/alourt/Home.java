@@ -9,24 +9,29 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 
 import irfan.apps.alourt.Handlers.SharedPrefsHandler;
 import irfan.apps.alourt.Handlers.User;
 import irfan.apps.alourt.Services.UIDGeneratorService;
 
+//TODO create online and offline mode versions, and link it to the sms handler.
+
 public class Home extends AppCompatActivity implements View.OnClickListener {
 
     EditText inviteId;
     Button submitInviteIdButton;
-    //Button submitNameButton;
-    //EditText nameEdit;
+
     Button createGroupButton;
     TextView disp;
     String name;
@@ -35,6 +40,7 @@ public class Home extends AppCompatActivity implements View.OnClickListener {
     String UID;
 
     SharedPrefsHandler sph;
+    DatabaseReference dbr;
 
     private final String TAG = "Test";
     private final boolean ADMIN_USER = true;
@@ -57,6 +63,8 @@ public class Home extends AppCompatActivity implements View.OnClickListener {
         sph = new SharedPrefsHandler(getApplicationContext());
 
         user = FirebaseAuth.getInstance().getCurrentUser();
+        dbr = FirebaseDatabase.getInstance().getReference(getString(R.string.groups_Firebase));
+
         UID = user.getUid();
         name = sph.loadName();
         mobile = sph.loadMobile();
@@ -114,38 +122,59 @@ public class Home extends AppCompatActivity implements View.OnClickListener {
     public void onClick(View v) {
         //TODO Add a check to prevent NAN and Null inputs
         switch (v.getId()) {
+            /**
+             *  Joining a group, using a specified invite ID.
+             */
             case R.id.inviteIdSubmitButton:
                 final String invID = inviteId.getText().toString();
                 mobile = sph.loadMobile();
                 Log.d(TAG, "Clicked " + UID + " and mob: " + mobile);
-                //TODO add sharedprefs to store user details.
                 if (UID != null && mobile != 0 && name != null) {
                     Log.d(TAG, "Started invite helper");
-                    User nUser = new User(name, mobile, NOT_ADMIN_USER);
-                    DatabaseReference dbr = FirebaseDatabase.getInstance().getReference("groups");
-                    dbr.child(invID).child("members").child(UID).setValue(nUser).addOnSuccessListener(new OnSuccessListener<Void>() {
+                    final User nUser = new User(name, mobile, NOT_ADMIN_USER);
+
+                    dbr.addListenerForSingleValueEvent(new ValueEventListener() {
                         @Override
-                        public void onSuccess(Void aVoid) {
-                            sph.addBucketID(invID);
+                        public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                            if (dataSnapshot.hasChild(invID)) {
+                                dbr.child(invID).child(getString(R.string.members_Firebase)).child(UID).setValue(nUser).addOnSuccessListener(new OnSuccessListener<Void>() {
+                                    @Override
+                                    public void onSuccess(Void aVoid) {
+                                        sph.addBucketID(invID);
+                                        Toast.makeText(getApplicationContext(), "Successfully joined group", Toast.LENGTH_LONG).show();
+                                    }
+
+                                });
+                            } else {
+                                Toast.makeText(getApplicationContext(), "Invalid ID", Toast.LENGTH_LONG).show();
+                            }
+                        }
+
+                        @Override
+                        public void onCancelled(@NonNull DatabaseError databaseError) {
+
                         }
                     });
-                    Toast.makeText(this, "Successfully joined group", Toast.LENGTH_LONG).show();
                 }
                 break;
+
+            /**
+             * Creating a new group, uses UIDGeneratorService to create a new, unique UID for the group.
+             */
             case R.id.newGroupButton:
                 UIDGeneratorService uid = new UIDGeneratorService(this);
                 final String GroupID = uid.generateRandom();
                 Log.d(TAG, "New group initiated " + UID + " " + mobile + " " + name);
                 if (UID != null && mobile != 0 && name != null) {
                     User nUser = new User(name, mobile, ADMIN_USER);
-                    DatabaseReference dbr = FirebaseDatabase.getInstance().getReference("groups");
-                    dbr.child(GroupID).child("members").child(UID).setValue(nUser).addOnSuccessListener(new OnSuccessListener<Void>() {
+                    dbr.child(GroupID).child(getString(R.string.members_Firebase)).child(UID).setValue(nUser).addOnSuccessListener(new OnSuccessListener<Void>() {
                         @Override
                         public void onSuccess(Void aVoid) {
                             sph.addBucketID(GroupID);
+                            Toast.makeText(getApplicationContext(), "Group created successfully", Toast.LENGTH_LONG).show();
                         }
                     });
-                    dbr.child(GroupID).child("activated").setValue(0);
+                    dbr.child(GroupID).child(getString(R.string.activated_Firebase)).setValue(0);
                 }
                 break;
 

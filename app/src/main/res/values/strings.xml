@@ -1,4 +1,15 @@
 <resources>
     <string name="app_name">Alourt</string>
     <string name="accessibility_service_description">This permission is only used to allow you to use the volume buttons to trigger an alert message.</string>
+    <string name="username_sharedpreferences">username</string>
+    <string name="mobile_sharedpreferences">mobile</string>
+    <string name="UID_sharedpreferences">UID</string>
+    <string name="userGroupSet_sharedpreferences">userGroup</string>
+    <string name="groups_Firebase">groups</string>
+    <string name="members_Firebase">members</string>
+    <string name="activated_Firebase">activated</string>
+    <string name="adminStatus_Firebase">adminStatus</string>
+    <string name="group_name_IntentPackage">group_name</string>
+    <string name="mobile_IntentPackage">mobile</string>
+    <string name="isCreator_IntentPackage">isCreator</string>
 </resources>

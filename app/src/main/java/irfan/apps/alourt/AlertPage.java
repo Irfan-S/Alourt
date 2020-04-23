@@ -17,31 +17,36 @@ import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 
 import java.util.ArrayList;
 
 import irfan.apps.alourt.Handlers.SharedPrefsHandler;
+import irfan.apps.alourt.Services.AccessibilityKeyDetector;
 
 public class AlertPage extends AppCompatActivity {
 
     //TODO create an SMS service that sends the bucket(s) the user is attached to as a body. Which is then used later on by Alourt's server. Sending credentials could be vulnerable.
-    //TODO requires a bucket name generator, that has to be randomized, and given an internal name.
 
     AudioManager audioM;
     CameraManager mCameraManager;
     TextView dispTxt;
-    public static final String NOTIFICATION_CHANNEL_ID = "1201";
     MediaPlayer mp;
     android.hardware.Camera mCamera;
     android.hardware.Camera.Parameters parameters;
     private final String TAG = "AlertPage";
     private boolean toggleSwitch = true;
     SharedPrefsHandler sph;
+    boolean isAdminOrCreator;
+    String bucket;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -49,8 +54,10 @@ public class AlertPage extends AppCompatActivity {
         setContentView(R.layout.activity_alert);
         Intent in = getIntent();
         dispTxt = findViewById(R.id.alertText);
-        String group = in.getStringExtra("bucket_name");
-        dispTxt.setText("Someone from " + group + " needs help");
+        String group = in.getStringExtra(getString(R.string.group_name_IntentPackage));
+        String mob = in.getStringExtra(getString(R.string.mobile_IntentPackage));
+        isAdminOrCreator = in.getBooleanExtra(getString(R.string.isCreator_IntentPackage), false);
+        dispTxt.setText(mob + " from " + group + " needs help");
         sph = new SharedPrefsHandler(getApplicationContext());
         Log.d(TAG, "Activity launched");
         audioM = (AudioManager) getSystemService(AUDIO_SERVICE);
@@ -84,9 +91,24 @@ public class AlertPage extends AppCompatActivity {
         // Write a message to the database
         ArrayList<String> buckets = sph.retrieveBuckets();
         FirebaseDatabase database = FirebaseDatabase.getInstance();
-        DatabaseReference myRef = database.getReference("groups");
-        for (String bucket : buckets) {
-            myRef.child(bucket).child("activated").setValue(0);
+        DatabaseReference myRef = database.getReference(getString(R.string.groups_Firebase));
+
+        for (String locBucket : buckets) {
+            bucket = locBucket;
+            myRef.addListenerForSingleValueEvent(new ValueEventListener() {
+                @Override
+                public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                    isAdminOrCreator = dataSnapshot.child(bucket).child(getString(R.string.members_Firebase)).child(sph.loadUID()).child(getString(R.string.adminStatus_Firebase)).getValue(Boolean.class);
+                }
+
+                @Override
+                public void onCancelled(@NonNull DatabaseError databaseError) {
+
+                }
+            });
+            if (isAdminOrCreator) {
+                myRef.child(bucket).child(getString(R.string.activated_Firebase)).setValue(0);
+            }
         }
     }
 
@@ -162,6 +184,11 @@ public class AlertPage extends AppCompatActivity {
 
     private void startNotificationCycle() {
         toggleSwitch = true;
+
+        // When notification is triggered, stop others from triggering it.
+        stopService(new Intent(this, AccessibilityKeyDetector.class));
+
+
         boolean isFlashAvailable = getApplicationContext().getPackageManager()
                 .hasSystemFeature(PackageManager.FEATURE_CAMERA_FLASH);
         if (isFlashAvailable) {
@@ -174,6 +201,8 @@ public class AlertPage extends AppCompatActivity {
     }
 
     public void endNotificationCycle(View v) {
+
+        startService(new Intent(this, AccessibilityKeyDetector.class));
         toggleSwitch = false;
         audioOff();
         stopAlertBroadcast();

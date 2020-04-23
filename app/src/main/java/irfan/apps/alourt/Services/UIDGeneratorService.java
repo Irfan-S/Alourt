@@ -15,13 +15,15 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.Random;
 
+import irfan.apps.alourt.R;
+
 
 public class UIDGeneratorService {
 
-    final String TAG = "UIDGeneratorService";
+    private final String TAG = "UIDGeneratorService";
     private final int MAX_RANGE = 999999;
-    String randomUID;
-    Activity activity;
+    private String randomUID;
+    private Activity activity;
 
 
     public UIDGeneratorService(Activity activity) {
@@ -39,13 +41,14 @@ public class UIDGeneratorService {
         int month = cal.get(Calendar.MONTH) + 1;
         Random r = new Random();
         randomUID = String.valueOf(r.nextInt(MAX_RANGE));
-        staticDBR.child("groups").addListenerForSingleValueEvent(new ValueEventListener() {
+        staticDBR.child(activity.getString(R.string.groups_Firebase)).addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 for (DataSnapshot ds : dataSnapshot.getChildren()) {
                     if (randomUID.equals(ds.getKey())) {
+                        Log.d(TAG, "Group found, creating a new UID");
                         randomUID = generateRandom();
-                        Log.d(TAG, "Group found");
+
                     }
                 }
             }
