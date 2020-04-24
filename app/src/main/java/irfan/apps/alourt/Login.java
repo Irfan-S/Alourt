@@ -8,7 +8,6 @@ import android.provider.Settings;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
@@ -55,7 +54,6 @@ public class Login extends AppCompatActivity implements View.OnClickListener {
     private PhoneAuthProvider.ForceResendingToken mResendToken;
     private PhoneAuthProvider.OnVerificationStateChangedCallbacks mCallbacks;
 
-    private ViewGroup mPhoneNumberViews;
 
 
     private SharedPrefsHandler sharedPreferencesHandler;
@@ -73,14 +71,13 @@ public class Login extends AppCompatActivity implements View.OnClickListener {
         super.onCreate(savedInstanceState);
 
         setContentView(R.layout.activity_login);
+        getSupportActionBar().hide();
 
         // Restore instance state
         if (savedInstanceState != null) {
             onRestoreInstanceState(savedInstanceState);
         }
 
-        // Assign views
-        mPhoneNumberViews = findViewById(R.id.phoneAuthFields);
 
         mPhoneNumberField = findViewById(R.id.fieldPhoneNumber);
         mVerificationField = findViewById(R.id.fieldVerificationCode);
@@ -377,7 +374,6 @@ public class Login extends AppCompatActivity implements View.OnClickListener {
 
         if (user == null) {
             // Signed out
-            mPhoneNumberViews.setVisibility(View.VISIBLE);
         } else {
 
             //Extracting user name, and storing data using Preferences handler.
