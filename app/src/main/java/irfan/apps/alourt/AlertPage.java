@@ -17,17 +17,11 @@ import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.google.firebase.database.DataSnapshot;
-import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.database.ValueEventListener;
-
-import java.util.ArrayList;
 
 import irfan.apps.alourt.Handlers.SharedPrefsHandler;
 import irfan.apps.alourt.Services.AccessibilityKeyDetector;
@@ -46,7 +40,13 @@ public class AlertPage extends AppCompatActivity {
     private boolean toggleSwitch = true;
     SharedPrefsHandler sph;
     boolean isAdminOrCreator;
-    String bucket;
+
+    String group;
+    long mobile;
+
+//    ArrayList<String> buckets;
+//    ArrayList<String> mobiles;
+//    String bucket;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -54,10 +54,12 @@ public class AlertPage extends AppCompatActivity {
         setContentView(R.layout.activity_alert);
         Intent in = getIntent();
         dispTxt = findViewById(R.id.alertText);
-        String group = in.getStringExtra(getString(R.string.group_name_IntentPackage));
-        String mob = in.getStringExtra(getString(R.string.mobile_IntentPackage));
+//        buckets = new ArrayList<>();
+//        mobiles = new ArrayList<>();
+        group = in.getStringExtra(getString(R.string.group_name_IntentPackage));
+        mobile = in.getLongExtra(getString(R.string.mobile_IntentPackage), 0);
         isAdminOrCreator = in.getBooleanExtra(getString(R.string.isCreator_IntentPackage), false);
-        dispTxt.setText(mob + " from " + group + " needs help");
+        dispTxt.setText(mobile + " from " + group + " needs help");
         sph = new SharedPrefsHandler(getApplicationContext());
         Log.d(TAG, "Activity launched");
         audioM = (AudioManager) getSystemService(AUDIO_SERVICE);
@@ -89,27 +91,36 @@ public class AlertPage extends AppCompatActivity {
 
     private void stopAlertBroadcast() {
         // Write a message to the database
-        ArrayList<String> buckets = sph.retrieveBuckets();
+        //ArrayList<String> buckets = sph.retrieveBuckets();
         FirebaseDatabase database = FirebaseDatabase.getInstance();
         DatabaseReference myRef = database.getReference(getString(R.string.groups_Firebase));
 
-        for (String locBucket : buckets) {
-            bucket = locBucket;
-            myRef.addListenerForSingleValueEvent(new ValueEventListener() {
-                @Override
-                public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                    isAdminOrCreator = dataSnapshot.child(bucket).child(getString(R.string.members_Firebase)).child(sph.loadUID()).child(getString(R.string.adminStatus_Firebase)).getValue(Boolean.class);
-                }
-
-                @Override
-                public void onCancelled(@NonNull DatabaseError databaseError) {
-
-                }
-            });
-            if (isAdminOrCreator) {
-                myRef.child(bucket).child(getString(R.string.activated_Firebase)).setValue(0);
+        //for (String locBucket : buckets) {
+        //    bucket = locBucket;
+//            myRef.addListenerForSingleValueEvent(new ValueEventListener() {
+//                @Override
+//                public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+//                    if(isAdminOrCreator){
+//
+//                    }
+//                    try {
+//                        isAdminOrCreator = dataSnapshot.child(group).child(getString(R.string.members_Firebase)).child(sph.loadUID()).child(getString(R.string.adminStatus_Firebase)).getValue(Boolean.class);
+//                    }catch (NullPointerException e){
+//                        Log.d(TAG,"Data not found");
+//                    }
+//                        Log.d(TAG,"Is current user admin/creator for "+group+ "is "+ isAdminOrCreator);
+//                }
+//
+//                @Override
+//                public void onCancelled(@NonNull DatabaseError databaseError) {
+//
+//                }
+//            });
+        if (isAdminOrCreator && !group.isEmpty()) {
+            myRef.child(group).child(getString(R.string.activated_Firebase)).setValue(0);
             }
-        }
+        //    }
+        finish();
     }
 
 
@@ -202,10 +213,19 @@ public class AlertPage extends AppCompatActivity {
 
     public void endNotificationCycle(View v) {
 
-        startService(new Intent(this, AccessibilityKeyDetector.class));
+        //startService(new Intent(this, AccessibilityKeyDetector.class));
         toggleSwitch = false;
         audioOff();
         stopAlertBroadcast();
     }
 
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        //startService(new Intent(this, AccessibilityKeyDetector.class));
+        toggleSwitch = false;
+        audioOff();
+        stopAlertBroadcast();
+    }
 }

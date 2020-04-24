@@ -17,10 +17,9 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
-import java.util.ArrayList;
-
 import irfan.apps.alourt.AlertPage;
 import irfan.apps.alourt.Handlers.SharedPrefsHandler;
+import irfan.apps.alourt.Home;
 import irfan.apps.alourt.R;
 
 public class AccessibilityKeyDetector extends AccessibilityService {
@@ -31,33 +30,39 @@ public class AccessibilityKeyDetector extends AccessibilityService {
     Intent notifyIntent;
     FirebaseDatabase database;
     DatabaseReference myRef;
-    ArrayList<String> buckets;
+
+    ValueEventListener listener;
+
+    String group;
+
+    boolean isCreator;
+
+    Long mobile;
+//    ArrayList<String> buckets,alertBuckets;
+//    ArrayList<String> mobileAlerts;
 
     SharedPrefsHandler sph;
 
+    //String temp;
+
     @Override
-    public boolean onKeyEvent(final KeyEvent event) {
+    public boolean onKeyEvent(KeyEvent event) {
+        boolean op = super.onKeyEvent(event);
         Log.d(TAG, "Key pressed via accessibility is: " + event.getKeyCode() + " and counter is: " + counter);
+
+        group = sph.loadGroup();
+        attachListener();
+
+
         //To trigger, press vol up, vol down and vol up again. Need a wait system that will wait for input within the next 2 seconds, or it will just reset
 
         if (counter % 2 == 0 && event.getKeyCode() == 24) {
             counter += 1;
             Log.d(TAG, "Counter after 24 is: " + counter);
-            new CountDownTimer(2000, 100) {
+            new CountDownTimer(2000, 1000) {
 
                 @Override
                 public void onTick(long millisUntilFinished) {
-                    if (counter % 2 == 1 && event.getKeyCode() == 25) {
-                        counter += 2;
-                        Log.d(TAG, "Counter after 25 is: " + counter);
-                    } else if (counter == 5) {
-                        Log.d(TAG, "Triggering ringtone...");
-                        sendAlertBroadcast();
-                        notifyIntent.putExtra(getString(R.string.isCreator_IntentPackage), true);
-                        notifyIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                        getApplicationContext().startActivity(notifyIntent);
-                        counter = 0;
-                    }
                 }
 
                 @Override
@@ -66,24 +71,21 @@ public class AccessibilityKeyDetector extends AccessibilityService {
                     counter = 0;
                 }
             }.start();
-        }
-//        } else if (counter % 2 == 1 && event.getKeyCode() == 25) {
-//            counter += 2;
-//            Log.d(TAG, "Counter after 25 is: " + counter);
-//        } else if (counter == 5) {
-//            Log.d(TAG, "Triggering ringtone...");
-//            sendAlertBroadcast();
-//            notifyIntent.putExtra(getString(R.string.isCreator_IntentPackage),true);
-//            notifyIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-//            getApplicationContext().startActivity(notifyIntent);
-//            counter = 0;
-//        }
-        else if (counter > 1) {
+        } else if (counter == 5) {
+            Log.d(TAG, "Triggering ringtone...");
+            sendAlertBroadcast();
+            isCreator = true;
+            attachListener();
+            counter = 0;
+        } else if (counter % 2 == 1 && event.getKeyCode() == 25) {
+            counter += 2;
+            Log.d(TAG, "Counter after 25 is: " + counter);
+        } else if (counter > 1) {
             Log.d(TAG, "Resetting due to invalid trigger");
             counter = 0;
         }
 
-        return super.onKeyEvent(event);
+        return op;
     }
 
     /**
@@ -91,78 +93,106 @@ public class AccessibilityKeyDetector extends AccessibilityService {
      */
     private void sendAlertBroadcast() {
         // Write a message to the database
-        for (String bucket : buckets) {
-            myRef.child(bucket).child(getString(R.string.activated_Firebase)).setValue(sph.loadMobile());
+        //for (String bucket : buckets) {
+        if (!group.isEmpty()) {
+            myRef.child(group).child(getString(R.string.activated_Firebase)).setValue(sph.loadMobile());
         }
+
+        //}
     }
 
     @Override
     protected void onServiceConnected() {
         Log.i(TAG, "Service connected");
-
+        isCreator = false;
         sph = new SharedPrefsHandler(getApplicationContext());
-
+        group = sph.loadGroup();
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        if (group.isEmpty()) {
+            detachListener();
+        }
         if (user != null) {
-            database = FirebaseDatabase.getInstance();
-            myRef = database.getReference(getString(R.string.groups_Firebase));
-
-            notifyIntent = new Intent(this, AlertPage.class);
-
-            buckets = sph.retrieveBuckets();
-            Log.d(TAG, "Buckets are: " + buckets.toString());
-
-            for (final String bucket : buckets) {
-                Log.d(TAG, "Attaching listener for" + bucket);
-                myRef.child(bucket).addValueEventListener(new ValueEventListener() {
-                    @Override
-                    public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                        int resp = 0;
-                        try {
-                            resp = dataSnapshot.child(getString(R.string.activated_Firebase)).getValue(Integer.class);
-                        } catch (NullPointerException e) {
-                            e.printStackTrace();
-                        }
-                        if (resp != 0) {
-                            notifyIntent.putExtra(getString(R.string.group_name_IntentPackage), bucket);
-                            notifyIntent.putExtra(getString(R.string.mobile_IntentPackage), resp);
-                            notifyIntent.putExtra(getString(R.string.isCreator_IntentPackage), false);
-                            notifyIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                            getApplicationContext().startActivity(notifyIntent);
-                        }
-                    }
-
-                    @Override
-                    public void onCancelled(@NonNull DatabaseError databaseError) {
-
-                    }
-                });
-            }
-
-            //demo has been set to a fixed id
-//            myRef.child("10001").addValueEventListener(new ValueEventListener() {
-//                @Override
-//                public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-//                    int resp = dataSnapshot.child("activated").getValue(Integer.class);
-//                    if (resp == 1) {
-//                        notifyIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-//                        getApplicationContext().startActivity(notifyIntent);
-//                    }
-//                }
-//
-//                @Override
-//                public void onCancelled(@NonNull DatabaseError databaseError) {
-//
-//                }
-//            });
+            attachListener();
         } else {
             Log.d(TAG, "Unable to start Firebase Auth, please retry");
         }
 
     }
 
+
+    public void attachListener() {
+        database = FirebaseDatabase.getInstance();
+        group = sph.loadGroup();
+        myRef = database.getReference(getString(R.string.groups_Firebase));
+
+        notifyIntent = new Intent(this, AlertPage.class);
+
+        //buckets = sph.retrieveBuckets();
+        //alertBuckets= new ArrayList<>();
+        //mobileAlerts = new ArrayList<>();
+
+        mobile = sph.loadMobile();
+        Log.d(TAG, "Group is: " + group + " and is creator = " + isCreator);
+
+        //for (String bucket : buckets) {
+        //temp =bucket;
+        Log.d(TAG, "Attaching listener for" + group);
+        listener = myRef.child(group).addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                long resp;
+                try {
+                    resp = dataSnapshot.child(getString(R.string.activated_Firebase)).getValue(Long.class);
+                } catch (NullPointerException e) {
+                    resp = 0;
+                }
+                Log.d(TAG, "Response from group is " + resp);
+                if (resp != 0) {
+//                        alertBuckets.add(temp);
+//                        mobileAlerts.add(String.valueOf(resp));
+                    mobile = resp;
+                    startAlertPage();
+                } else {
+
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+            }
+        });
+        // }
+
+    }
+
+    public void detachListener() {
+        if (listener != null) {
+            Log.d(TAG, "Detaching listener");
+            myRef.child(group).removeEventListener(listener);
+            listener = null;
+            sph.saveGroup(null);
+        }
+    }
+
+    private void startAlertPage() {
+        Log.d(TAG, "Initiating alert box");
+        notifyIntent.putExtra(getString(R.string.isCreator_IntentPackage), isCreator);
+        notifyIntent.putExtra(getString(R.string.group_name_IntentPackage), group);
+        notifyIntent.putExtra(getString(R.string.mobile_IntentPackage), mobile);
+        notifyIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+//        alertBuckets.clear();
+//        mobileAlerts.clear();
+        getApplicationContext().startActivity(notifyIntent);
+    }
+
     @Override
     public void onAccessibilityEvent(AccessibilityEvent event) {
+        Log.d(TAG, "Accessibility event triggered");
+        if (Home.clean) {
+            Log.d(TAG, "Cleaning old listener");
+            detachListener();
+        }
 
     }
 

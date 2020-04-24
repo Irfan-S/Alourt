@@ -1,8 +1,8 @@
 package irfan.apps.alourt;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.KeyEvent;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -23,16 +23,21 @@ import com.google.firebase.database.ValueEventListener;
 
 import irfan.apps.alourt.Handlers.SharedPrefsHandler;
 import irfan.apps.alourt.Handlers.User;
+import irfan.apps.alourt.Services.AccessibilityKeyDetector;
 import irfan.apps.alourt.Services.UIDGeneratorService;
 
 //TODO create online and offline mode versions, and link it to the sms handler.
+//TODO on leaving a group, create a way to remove all listeners before starting a new one.
 
 public class Home extends AppCompatActivity implements View.OnClickListener {
 
     EditText inviteId;
     Button submitInviteIdButton;
 
+    public static boolean clean = false;
+
     Button createGroupButton;
+    Button leaveGroupButton;
     TextView disp;
     String name;
     long mobile;
@@ -42,7 +47,7 @@ public class Home extends AppCompatActivity implements View.OnClickListener {
     SharedPrefsHandler sph;
     DatabaseReference dbr;
 
-    private final String TAG = "Test";
+    private final String TAG = "AlourtHome";
     private final boolean ADMIN_USER = true;
     private final boolean NOT_ADMIN_USER = false;
 
@@ -57,8 +62,10 @@ public class Home extends AppCompatActivity implements View.OnClickListener {
         submitInviteIdButton = findViewById(R.id.inviteIdSubmitButton);
         createGroupButton = findViewById(R.id.newGroupButton);
 
+        leaveGroupButton = findViewById(R.id.leaveGroupButton);
         submitInviteIdButton.setOnClickListener(this);
         createGroupButton.setOnClickListener(this);
+        leaveGroupButton.setOnClickListener(this);
 
         sph = new SharedPrefsHandler(getApplicationContext());
 
@@ -68,6 +75,12 @@ public class Home extends AppCompatActivity implements View.OnClickListener {
         UID = user.getUid();
         name = sph.loadName();
         mobile = sph.loadMobile();
+        String group = sph.loadGroup();
+        if (!group.isEmpty()) {
+            disp.setText("Your group is " + group);
+        } else {
+            disp.setText("No groups assigned");
+        }
 
 
     }
@@ -109,14 +122,14 @@ public class Home extends AppCompatActivity implements View.OnClickListener {
 //        }
 //    }
 
-
-    @Override
-    public boolean onKeyDown(int keyCode, KeyEvent event) {
-        Log.d(TAG, "Key pressed");
-        disp.setText("Key pressed is" + keyCode);
-        return true;
-
-    }
+//
+//    @Override
+//    public boolean onKeyDown(int keyCode, KeyEvent event) {
+//        Log.d(TAG, "Key pressed");
+//        disp.setText("Key pressed is" + keyCode);
+//        return true;
+//
+//    }
 
     @Override
     public void onClick(View v) {
@@ -129,7 +142,7 @@ public class Home extends AppCompatActivity implements View.OnClickListener {
                 final String invID = inviteId.getText().toString();
                 mobile = sph.loadMobile();
                 Log.d(TAG, "Clicked " + UID + " and mob: " + mobile);
-                if (UID != null && mobile != 0 && name != null) {
+                if (UID != null && mobile != 0 && name != null && !invID.isEmpty()) {
                     Log.d(TAG, "Started invite helper");
                     final User nUser = new User(name, mobile, NOT_ADMIN_USER);
 
@@ -140,7 +153,9 @@ public class Home extends AppCompatActivity implements View.OnClickListener {
                                 dbr.child(invID).child(getString(R.string.members_Firebase)).child(UID).setValue(nUser).addOnSuccessListener(new OnSuccessListener<Void>() {
                                     @Override
                                     public void onSuccess(Void aVoid) {
-                                        sph.addBucketID(invID);
+                                        sph.saveGroup(invID);
+                                        disp.setText("Your group is " + invID);
+                                        startService(new Intent(getApplicationContext(), AccessibilityKeyDetector.class));
                                         Toast.makeText(getApplicationContext(), "Successfully joined group", Toast.LENGTH_LONG).show();
                                     }
 
@@ -170,7 +185,9 @@ public class Home extends AppCompatActivity implements View.OnClickListener {
                     dbr.child(GroupID).child(getString(R.string.members_Firebase)).child(UID).setValue(nUser).addOnSuccessListener(new OnSuccessListener<Void>() {
                         @Override
                         public void onSuccess(Void aVoid) {
-                            sph.addBucketID(GroupID);
+                            sph.saveGroup(GroupID);
+                            disp.setText("Your group is " + GroupID);
+                            startService(new Intent(getApplicationContext(), AccessibilityKeyDetector.class));
                             Toast.makeText(getApplicationContext(), "Group created successfully", Toast.LENGTH_LONG).show();
                         }
                     });
@@ -178,6 +195,19 @@ public class Home extends AppCompatActivity implements View.OnClickListener {
                 }
                 break;
 
+            case R.id.leaveGroupButton:
+                final String groupID = sph.loadGroup();
+                if (!groupID.isEmpty()) {
+                    dbr.child(groupID).child(getString(R.string.members_Firebase)).child(UID).setValue(null).addOnSuccessListener(new OnSuccessListener<Void>() {
+                        @Override
+                        public void onSuccess(Void aVoid) {
+                            clean = true;
+                            disp.setText("No group assigned");
+                            startService(new Intent(getApplicationContext(), AccessibilityKeyDetector.class));
+                            Toast.makeText(getApplicationContext(), "Successfully left group", Toast.LENGTH_LONG).show();
+                        }
+                    });
+                }
 
         }
 

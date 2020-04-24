@@ -381,9 +381,12 @@ public class Login extends AppCompatActivity implements View.OnClickListener {
         } else {
 
             //Extracting user name, and storing data using Preferences handler.
-            String name = nameEdit.getText().toString();
+            String name = sharedPreferencesHandler.loadName();
+            Log.d(TAG, "User name = " + name);
+            if (name.isEmpty()) {
+                name = nameEdit.getText().toString();
+            }
             if (name != null && !name.isEmpty()) {
-                SharedPrefsHandler sharedPreferencesHandler = new SharedPrefsHandler(getApplicationContext());
                 sharedPreferencesHandler.saveName(name);
                 sharedPreferencesHandler.saveUID(user.getUid());
                 startActivity(new Intent(this, Home.class));

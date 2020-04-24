@@ -25,7 +25,7 @@ public class SharedPrefsHandler {
         SharedPreferences.Editor myEdit
                 = sharedPreferences.edit();
         myEdit.putLong(
-                "mobile",
+                context.getString(R.string.mobile_sharedpreferences),
                 mobile);
         myEdit.apply();
     }
@@ -34,7 +34,7 @@ public class SharedPrefsHandler {
         SharedPreferences.Editor myEdit
                 = sharedPreferences.edit();
         myEdit.putString(
-                "name",
+                context.getString(R.string.username_sharedpreferences),
                 name);
         myEdit.apply();
     }
@@ -59,6 +59,25 @@ public class SharedPrefsHandler {
         return sharedPreferences.getString(context.getString(R.string.UID_sharedpreferences), "");
     }
 
+    public void saveGroup(String group) {
+        SharedPreferences.Editor myEdit
+                = sharedPreferences.edit();
+        myEdit.putString(
+                context.getString(R.string.group_sharedpreferences),
+                group);
+        myEdit.apply();
+    }
+
+    public String loadGroup() {
+        return sharedPreferences.getString(context.getString(R.string.group_sharedpreferences), "");
+    }
+
+
+    /**
+     * Useful for multi-bucket scenarios, as of now focusing on one bucket per head
+     *
+     * @param bucket
+     */
     public void addBucketID(String bucket) {
         ArrayList<String> buckets = retrieveBuckets();
         buckets.add(bucket);
