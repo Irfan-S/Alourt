@@ -14,6 +14,8 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.auth.PhoneAuthProvider;
 
+//TODO design alert screen, and add in location transmission.
+
 public class SplashScreen extends AppCompatActivity {
 
     private FirebaseAuth mAuth;
@@ -31,12 +33,9 @@ public class SplashScreen extends AppCompatActivity {
         getSupportActionBar().hide();
 
 
-        mAuth = FirebaseAuth.getInstance();
-
-
         intent = new Intent(getApplicationContext(), Login.class);
 
-        CountDownTimer countDownTimer = new CountDownTimer(1000, 1000) {
+        CountDownTimer countDownTimer = new CountDownTimer(2000, 1000) {
 
             public void onTick(long millisecondsUntilDone) {
 
@@ -45,7 +44,7 @@ public class SplashScreen extends AppCompatActivity {
 
             public void onFinish() {
                 Log.d(TAG, "Background sign-in running...");
-
+                mAuth = FirebaseAuth.getInstance();
                 FirebaseUser user = mAuth.getCurrentUser();
                 if (user != null) {
                     Log.d(TAG, "signInWithCredential:success");
