@@ -1,11 +1,19 @@
 package irfan.apps.alourt.Services;
 
 import android.accessibilityservice.AccessibilityService;
+import android.annotation.SuppressLint;
+import android.content.Context;
 import android.content.Intent;
+import android.location.Location;
+import android.location.LocationListener;
+import android.location.LocationManager;
+import android.os.Bundle;
 import android.os.CountDownTimer;
+import android.provider.Settings;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.accessibility.AccessibilityEvent;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 
@@ -18,6 +26,7 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
 import irfan.apps.alourt.AlertPage;
+import irfan.apps.alourt.Handlers.Activator;
 import irfan.apps.alourt.Handlers.SharedPrefsHandler;
 import irfan.apps.alourt.Home;
 import irfan.apps.alourt.R;
@@ -31,11 +40,16 @@ public class AccessibilityKeyDetector extends AccessibilityService {
     FirebaseDatabase database;
     DatabaseReference myRef;
 
+    String activatorName;
+
     ValueEventListener listener;
 
     String group;
 
     boolean isCreator;
+
+    String latitude;
+    String longitude;
 
     Long mobile;
 //    ArrayList<String> buckets,alertBuckets;
@@ -74,6 +88,7 @@ public class AccessibilityKeyDetector extends AccessibilityService {
         } else if (counter == 5) {
             Log.d(TAG, "Triggering ringtone...");
             sendAlertBroadcast();
+            activatorName = sph.loadName();
             isCreator = true;
             attachListener();
             counter = 0;
@@ -95,7 +110,16 @@ public class AccessibilityKeyDetector extends AccessibilityService {
         // Write a message to the database
         //for (String bucket : buckets) {
         if (!group.isEmpty()) {
-            myRef.child(group).child(getString(R.string.activated_Firebase)).setValue(sph.loadMobile());
+            checkGpsStatus();
+            attachGPSListener();
+            Activator user;
+            if (latitude != null & longitude != null) {
+                user = new Activator(sph.loadMobile(), latitude, longitude, sph.loadName());
+            } else {
+                user = new Activator(sph.loadMobile(), "NA", "NA", sph.loadName());
+            }
+            myRef.child(group).child(getString(R.string.activated_Firebase)).setValue(user);
+
         }
 
         //}
@@ -119,10 +143,48 @@ public class AccessibilityKeyDetector extends AccessibilityService {
 
     }
 
+    @SuppressLint("MissingPermission")
+    public void attachGPSListener() {
+        LocationManager locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+        // Define the criteria how to select the locatioin provider -> use
+        // default
 
+        LocationListener locationListener = new LocationListener() {
+            @Override
+            public void onLocationChanged(Location location) {
+                longitude = "Longitude: " + location.getLongitude();
+                Log.v(TAG, longitude);
+                latitude = "Latitude: " + location.getLatitude();
+                Log.v(TAG, latitude);
+            }
+
+            @Override
+            public void onStatusChanged(String provider, int status, Bundle extras) {
+
+            }
+
+            @Override
+            public void onProviderEnabled(String provider) {
+
+            }
+
+            @Override
+            public void onProviderDisabled(String provider) {
+
+            }
+        };
+        locationManager.requestLocationUpdates(
+                LocationManager.NETWORK_PROVIDER, 0, 0, locationListener);
+        locationManager.requestLocationUpdates(
+                LocationManager.GPS_PROVIDER, 0, 0, locationListener
+        );
+    }
+
+    @SuppressLint("MissingPermission")
     public void attachListener() {
         database = FirebaseDatabase.getInstance();
         group = sph.loadGroup();
+
         myRef = database.getReference(getString(R.string.groups_Firebase));
 
         notifyIntent = new Intent(this, AlertPage.class);
@@ -140,17 +202,20 @@ public class AccessibilityKeyDetector extends AccessibilityService {
         listener = myRef.child(group).addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                long resp;
+                Activator resp;
                 try {
-                    resp = dataSnapshot.child(getString(R.string.activated_Firebase)).getValue(Long.class);
+                    resp = dataSnapshot.child(getString(R.string.activated_Firebase)).getValue(Activator.class);
                 } catch (NullPointerException e) {
-                    resp = 0;
+                    resp = null;
                 }
                 Log.d(TAG, "Response from group is " + resp);
-                if (resp != 0) {
+                if (resp != null) {
 //                        alertBuckets.add(temp);
 //                        mobileAlerts.add(String.valueOf(resp));
-                    mobile = resp;
+                    mobile = resp.getMobile();
+                    latitude = resp.getLatitude();
+                    longitude = resp.getLongitude();
+                    activatorName = resp.getName();
                     startAlertPage();
                 } else {
 
@@ -179,6 +244,9 @@ public class AccessibilityKeyDetector extends AccessibilityService {
         Log.d(TAG, "Initiating alert box");
         notifyIntent.putExtra(getString(R.string.isCreator_IntentPackage), isCreator);
         notifyIntent.putExtra(getString(R.string.group_name_IntentPackage), group);
+        notifyIntent.putExtra("latitude", latitude);
+        notifyIntent.putExtra("longitude", longitude);
+        notifyIntent.putExtra("activator_name", activatorName);
         notifyIntent.putExtra(getString(R.string.mobile_IntentPackage), mobile);
         notifyIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 //        alertBuckets.clear();
@@ -200,5 +268,19 @@ public class AccessibilityKeyDetector extends AccessibilityService {
     @Override
     public void onInterrupt() {
 
+    }
+
+    public void checkGpsStatus() {
+        LocationManager locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+        assert locationManager != null;
+        boolean GpsStatus = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER);
+        if (GpsStatus) {
+            Log.d(TAG, "Location enabled");
+        } else {
+            Toast.makeText(this, "Please enable location for active tracking", Toast.LENGTH_LONG).show();
+            Intent intent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+            intent.addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY);
+            startActivity(intent);
+        }
     }
 }

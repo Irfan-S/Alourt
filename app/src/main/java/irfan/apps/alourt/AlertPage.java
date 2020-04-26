@@ -1,10 +1,12 @@
 package irfan.apps.alourt;
 
+import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.hardware.Camera;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraManager;
+import android.location.LocationManager;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.media.RingtoneManager;
@@ -29,7 +31,7 @@ import irfan.apps.alourt.Services.AccessibilityKeyDetector;
 public class AlertPage extends AppCompatActivity {
 
     //TODO create an SMS service that sends the bucket(s) the user is attached to as a body. Which is then used later on by Alourt's server. Sending credentials could be vulnerable.
-
+    //TODO add in latitude, longitude and name displays.
     AudioManager audioM;
     CameraManager mCameraManager;
     TextView dispTxt;
@@ -41,6 +43,12 @@ public class AlertPage extends AppCompatActivity {
     SharedPrefsHandler sph;
     boolean isAdminOrCreator;
 
+    private LocationManager locationManager = null;
+//    private LocationListener locationListener=null;
+
+    String name;
+    String latitude;
+    String longitude;
     String group;
     long mobile;
 
@@ -48,11 +56,13 @@ public class AlertPage extends AppCompatActivity {
 //    ArrayList<String> mobiles;
 //    String bucket;
 
+    @SuppressLint("MissingPermission")
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_alert);
         getSupportActionBar().hide();
+        //locationListener = new MyLocationListener();
 
 
         Intent in = getIntent();
@@ -61,6 +71,9 @@ public class AlertPage extends AppCompatActivity {
 //        mobiles = new ArrayList<>();
         group = in.getStringExtra(getString(R.string.group_name_IntentPackage));
         mobile = in.getLongExtra(getString(R.string.mobile_IntentPackage), 0);
+        latitude = in.getStringExtra("latitude");
+        longitude = in.getStringExtra("longitude");
+        name = in.getStringExtra("activator_name");
         isAdminOrCreator = in.getBooleanExtra(getString(R.string.isCreator_IntentPackage), false);
         dispTxt.setText(mobile + " from " + group + " needs help");
         sph = new SharedPrefsHandler(getApplicationContext());
@@ -72,6 +85,12 @@ public class AlertPage extends AppCompatActivity {
             }
         });
         thread.start();
+    }
+
+    @SuppressLint("MissingPermission")
+    @Override
+    protected void onResume() {
+        super.onResume();
     }
 
 
@@ -231,4 +250,8 @@ public class AlertPage extends AppCompatActivity {
         audioOff();
         stopAlertBroadcast();
     }
+
+
 }
+
+

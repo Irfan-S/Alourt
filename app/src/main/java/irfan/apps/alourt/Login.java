@@ -1,6 +1,7 @@
 package irfan.apps.alourt;
 
 import android.app.AlertDialog;
+import android.app.NotificationManager;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -37,7 +38,6 @@ import irfan.apps.alourt.Handlers.SharedPrefsHandler;
 
 import static android.Manifest.permission.ACCESS_COARSE_LOCATION;
 import static android.Manifest.permission.ACCESS_FINE_LOCATION;
-import static android.Manifest.permission.ACCESS_NOTIFICATION_POLICY;
 import static android.Manifest.permission.VIBRATE;
 
 public class Login extends AppCompatActivity implements View.OnClickListener {
@@ -118,9 +118,9 @@ public class Login extends AppCompatActivity implements View.OnClickListener {
         permissions.add(ACCESS_COARSE_LOCATION);
         permissions.add(VIBRATE);
         permissionsToRequest = findUnAskedPermissions(permissions);
-        permissions.add(ACCESS_NOTIFICATION_POLICY);
+        //permissions.add(ACCESS_NOTIFICATION_POLICY);
         if (permissionsToRequest.size() > 0) {
-            //checkAudioPermission();
+            checkAudioPermission();
             checkAccessibilityPermission();
             ActivityCompat.requestPermissions(this, permissionsToRequest.toArray(new String[permissionsToRequest.size()]), ALL_PERMISSIONS_RESULT);
         }
@@ -227,20 +227,20 @@ public class Login extends AppCompatActivity implements View.OnClickListener {
         mVerificationInProgress = savedInstanceState.getBoolean(KEY_VERIFY_IN_PROGRESS);
     }
 
-//    private void checkAudioPermission() {
-//        NotificationManager mNotificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-//
-//        // Check if the notification policy access has been granted for the app.
-//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-//            if (!mNotificationManager.isNotificationPolicyAccessGranted()) {
-//                Intent intent = new Intent(Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS);
-//                intent.addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY);
-//                Toast.makeText(this, "Please allow Alourt to modify DND settings, for emergency notifications", Toast.LENGTH_LONG).show();
-//                startActivity(intent);
-//
-//            }
-//        }
-//    }
+    private void checkAudioPermission() {
+        NotificationManager mNotificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+
+        // Check if the notification policy access has been granted for the app.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            if (!mNotificationManager.isNotificationPolicyAccessGranted()) {
+                Intent intent = new Intent(Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS);
+                intent.addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY);
+                Toast.makeText(this, "Please allow Alourt to modify DND settings, for emergency notifications", Toast.LENGTH_LONG).show();
+                startActivity(intent);
+
+            }
+        }
+    }
 
     private void checkAccessibilityPermission() {
         int accessEnabled = 0;

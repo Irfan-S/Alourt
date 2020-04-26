@@ -1,6 +1,7 @@
 package irfan.apps.alourt;
 
 import android.content.Intent;
+import android.location.LocationManager;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -60,6 +61,9 @@ public class Home extends AppCompatActivity implements View.OnClickListener {
     private RecyclerView membersRecycler;
     private MemberAdapter memberAdapter;
     String UID;
+
+    LocationManager locationManager;
+    boolean GpsStatus;
 
     ImageView img;
     Animation aniRotate;
@@ -319,5 +323,6 @@ public class Home extends AppCompatActivity implements View.OnClickListener {
 
 
     }
+
 }
 
