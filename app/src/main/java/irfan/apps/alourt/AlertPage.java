@@ -35,6 +35,9 @@ public class AlertPage extends AppCompatActivity {
     AudioManager audioM;
     CameraManager mCameraManager;
     TextView dispTxt;
+    TextView nametxt;
+    TextView latidudeDisp;
+    TextView longitudeDisp;
     MediaPlayer mp;
     android.hardware.Camera mCamera;
     android.hardware.Camera.Parameters parameters;
@@ -67,6 +70,9 @@ public class AlertPage extends AppCompatActivity {
 
         Intent in = getIntent();
         dispTxt = findViewById(R.id.alertText);
+        nametxt = findViewById(R.id.nameAlertTxt);
+        latidudeDisp = findViewById(R.id.latitudetxt);
+        longitudeDisp = findViewById(R.id.longitudetxt);
 //        buckets = new ArrayList<>();
 //        mobiles = new ArrayList<>();
         group = in.getStringExtra(getString(R.string.group_name_IntentPackage));
@@ -76,6 +82,9 @@ public class AlertPage extends AppCompatActivity {
         name = in.getStringExtra("activator_name");
         isAdminOrCreator = in.getBooleanExtra(getString(R.string.isCreator_IntentPackage), false);
         dispTxt.setText(mobile + " from " + group + " needs help");
+        nametxt.setText("Name: " + name);
+        latidudeDisp.setText("Last known latitude: " + latitude);
+        longitudeDisp.setText("Last known longitude: " + longitude);
         sph = new SharedPrefsHandler(getApplicationContext());
         Log.d(TAG, "Activity launched");
         audioM = (AudioManager) getSystemService(AUDIO_SERVICE);
@@ -139,7 +148,7 @@ public class AlertPage extends AppCompatActivity {
 //                }
 //            });
         if (isAdminOrCreator && !group.isEmpty()) {
-            myRef.child(group).child(getString(R.string.activated_Firebase)).setValue(0);
+            myRef.child(group).child(getString(R.string.activated_Firebase)).setValue(null);
             }
         //    }
         finish();

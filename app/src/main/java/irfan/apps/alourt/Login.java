@@ -35,6 +35,7 @@ import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
 
 import irfan.apps.alourt.Handlers.SharedPrefsHandler;
+import irfan.apps.alourt.Services.AccessibilityKeyDetector;
 
 import static android.Manifest.permission.ACCESS_COARSE_LOCATION;
 import static android.Manifest.permission.ACCESS_FINE_LOCATION;
@@ -119,9 +120,9 @@ public class Login extends AppCompatActivity implements View.OnClickListener {
         permissions.add(VIBRATE);
         permissionsToRequest = findUnAskedPermissions(permissions);
         //permissions.add(ACCESS_NOTIFICATION_POLICY);
+        checkAudioPermission();
+        checkAccessibilityPermission();
         if (permissionsToRequest.size() > 0) {
-            checkAudioPermission();
-            checkAccessibilityPermission();
             ActivityCompat.requestPermissions(this, permissionsToRequest.toArray(new String[permissionsToRequest.size()]), ALL_PERMISSIONS_RESULT);
         }
 
@@ -243,21 +244,93 @@ public class Login extends AppCompatActivity implements View.OnClickListener {
     }
 
     private void checkAccessibilityPermission() {
-        int accessEnabled = 0;
-        try {
-            accessEnabled = Settings.Secure.getInt(this.getContentResolver(), Settings.Secure.ACCESSIBILITY_ENABLED);
-        } catch (Settings.SettingNotFoundException e) {
-            e.printStackTrace();
-        }
-        Log.d(TAG, "Accessibility granted: " + accessEnabled);
-        if (accessEnabled == 0) {
-            // if not construct intent to request permission
+        if (!isAccessibilityEnabled()) {
             Intent intent = new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS);
             intent.addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY);
             // request permission via start activity for result
             Toast.makeText(this, "Please allow Alourt to have accessibility, for app activation using volume buttons", Toast.LENGTH_LONG).show();
             startActivity(intent);
         }
+
+//        Log.d(TAG,"Checking accessibility");
+//        ComponentName expectedComponentName = new ComponentName(this, AccessibilityKeyDetector.class);
+//
+//        String enabledServicesSetting = Settings.Secure.getString(this.getContentResolver(), Settings.Secure.ACCESSIBILITY_ENABLED);
+//
+//        TextUtils.SimpleStringSplitter colonSplitter = new TextUtils.SimpleStringSplitter(':');
+//        colonSplitter.setString(enabledServicesSetting);
+//
+//        Log.d(TAG,"Packages: "+ enabledServicesSetting);
+//        while (colonSplitter.hasNext()) {
+//            String componentNameString = colonSplitter.next();
+//            ComponentName enabledService = ComponentName.unflattenFromString(componentNameString);
+//
+//            if (enabledService != null && enabledService.equals(expectedComponentName)) {
+//                //do nothing.
+//                Log.d(TAG,"Enabled");
+//            }else{
+//                Intent intent = new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS);
+//                intent.addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY);
+//                // request permission via start activity for result
+//                Toast.makeText(this, "Please allow Alourt to have accessibility, for app activation using volume buttons", Toast.LENGTH_LONG).show();
+//                startActivity(intent);
+//            }
+//        }
+
+//
+//        int accessEnabled = 0;
+//        try {
+//            accessEnabled = Settings.Secure.getInt(this.getContentResolver(), Settings.Secure.ACCESSIBILITY_ENABLED);
+//        } catch (Settings.SettingNotFoundException e) {
+//            e.printStackTrace();
+//        }
+//        Log.d(TAG, "Accessibility granted: " + accessEnabled);
+//        if (accessEnabled == 0) {
+//            // if not construct intent to request permission
+//            Intent intent = new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS);
+//            intent.addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY);
+//            // request permission via start activity for result
+//            Toast.makeText(this, "Please allow Alourt to have accessibility, for app activation using volume buttons", Toast.LENGTH_LONG).show();
+//            startActivity(intent);
+//        }
+    }
+
+    private boolean isAccessibilityEnabled() {
+        int accessibilityEnabled = 0;
+        final String service = getPackageName() + "/" + AccessibilityKeyDetector.class.getCanonicalName();
+        try {
+            accessibilityEnabled = Settings.Secure.getInt(
+                    this.getApplicationContext().getContentResolver(),
+                    android.provider.Settings.Secure.ACCESSIBILITY_ENABLED);
+            Log.v(TAG, "accessibilityEnabled = " + accessibilityEnabled);
+        } catch (Settings.SettingNotFoundException e) {
+            Log.e(TAG, "Error finding setting, default accessibility to not found: "
+                    + e.getMessage());
+        }
+        TextUtils.SimpleStringSplitter mStringColonSplitter = new TextUtils.SimpleStringSplitter(':');
+
+        if (accessibilityEnabled == 1) {
+            Log.v(TAG, "***ACCESSIBILITY IS ENABLED*** -----------------");
+            String settingValue = Settings.Secure.getString(
+                    this.getApplicationContext().getContentResolver(),
+                    Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES);
+            if (settingValue != null) {
+                mStringColonSplitter.setString(settingValue);
+                while (mStringColonSplitter.hasNext()) {
+                    String accessibilityService = mStringColonSplitter.next();
+
+                    Log.v(TAG, "-------------- > accessibilityService :: " + accessibilityService + " " + service);
+                    if (accessibilityService.equalsIgnoreCase(service)) {
+                        Log.v(TAG, "We've found the correct setting - accessibility is switched on!");
+                        return true;
+                    }
+                }
+            }
+        } else {
+            Log.v(TAG, "***ACCESSIBILITY IS DISABLED***");
+        }
+
+        return false;
     }
 
 

@@ -31,6 +31,9 @@ import irfan.apps.alourt.Handlers.SharedPrefsHandler;
 import irfan.apps.alourt.Home;
 import irfan.apps.alourt.R;
 
+
+//TODO location not being sent check and fix
+
 public class AccessibilityKeyDetector extends AccessibilityService {
 
 
@@ -152,9 +155,9 @@ public class AccessibilityKeyDetector extends AccessibilityService {
         LocationListener locationListener = new LocationListener() {
             @Override
             public void onLocationChanged(Location location) {
-                longitude = "Longitude: " + location.getLongitude();
+                longitude = String.valueOf(location.getLongitude());
                 Log.v(TAG, longitude);
-                latitude = "Latitude: " + location.getLatitude();
+                latitude = String.valueOf(location.getLatitude());
                 Log.v(TAG, latitude);
             }
 
@@ -174,9 +177,9 @@ public class AccessibilityKeyDetector extends AccessibilityService {
             }
         };
         locationManager.requestLocationUpdates(
-                LocationManager.NETWORK_PROVIDER, 0, 0, locationListener);
+                LocationManager.NETWORK_PROVIDER, 5000, 0, locationListener);
         locationManager.requestLocationUpdates(
-                LocationManager.GPS_PROVIDER, 0, 0, locationListener
+                LocationManager.GPS_PROVIDER, 5000, 0, locationListener
         );
     }
 
@@ -213,8 +216,10 @@ public class AccessibilityKeyDetector extends AccessibilityService {
 //                        alertBuckets.add(temp);
 //                        mobileAlerts.add(String.valueOf(resp));
                     mobile = resp.getMobile();
-                    latitude = resp.getLatitude();
-                    longitude = resp.getLongitude();
+                    if (!isCreator) {
+                        latitude = resp.getLatitude();
+                        longitude = resp.getLongitude();
+                    }
                     activatorName = resp.getName();
                     startAlertPage();
                 } else {
@@ -279,6 +284,7 @@ public class AccessibilityKeyDetector extends AccessibilityService {
         } else {
             Toast.makeText(this, "Please enable location for active tracking", Toast.LENGTH_LONG).show();
             Intent intent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             intent.addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY);
             startActivity(intent);
         }

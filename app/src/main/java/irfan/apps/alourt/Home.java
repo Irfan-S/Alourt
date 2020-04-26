@@ -295,7 +295,7 @@ public class Home extends AppCompatActivity implements View.OnClickListener {
                             disp.setText("Your group is " + GroupID);
                             startService(new Intent(getApplicationContext(), AccessibilityKeyDetector.class));
                             Toast.makeText(getApplicationContext(), "Group created successfully", Toast.LENGTH_LONG).show();
-                            dbr.child(GroupID).child(getString(R.string.activated_Firebase)).setValue(0);
+                            //dbr.child(GroupID).child(getString(R.string.activated_Firebase)).setValue(0);
                             updateAnimation();
                         }
                     });
