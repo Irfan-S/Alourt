@@ -52,6 +52,9 @@ public class AlertPage extends AppCompatActivity {
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_alert);
+        getSupportActionBar().hide();
+
+
         Intent in = getIntent();
         dispTxt = findViewById(R.id.alertText);
 //        buckets = new ArrayList<>();

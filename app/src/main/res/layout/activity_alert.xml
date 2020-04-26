@@ -2,26 +2,32 @@
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
+    android:background="@drawable/ic_alert_page"
     android:layout_height="match_parent">
 
-    <Button
-        android:id="@+id/button2"
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/stopAlertButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:backgroundTint="@color/colorPrimaryDark"
         android:onClick="endNotificationCycle"
-        android:text="Stop"
+        android:text="I'm on it!"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.91" />
 
     <TextView
         android:id="@+id/alertText"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:textColor="@color/colorAccent"
         android:text="Someone needs help"
-        app:layout_constraintBottom_toTopOf="@+id/button2"
+
+        app:layout_constraintBottom_toTopOf="@+id/stopAlertButton"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.368" />
 </androidx.constraintlayout.widget.ConstraintLayout>
