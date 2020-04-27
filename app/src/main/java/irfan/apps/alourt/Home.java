@@ -40,6 +40,7 @@ import irfan.apps.alourt.Services.UIDGeneratorService;
 import irfan.apps.alourt.Utils.Variables;
 
 //TODO on leaving a group, create a way to remove all listeners before starting a new one.
+//TODO create animation for no network, or a new screen.
 
 public class Home extends AppCompatActivity implements View.OnClickListener {
 
@@ -69,8 +70,6 @@ public class Home extends AppCompatActivity implements View.OnClickListener {
 
 
     private final String TAG = "AlourtHome";
-    private final boolean ADMIN_USER = true;
-    private final boolean NOT_ADMIN_USER = false;
 
 
     @Override
@@ -252,6 +251,7 @@ public class Home extends AppCompatActivity implements View.OnClickListener {
                     Log.d(TAG, "Clicked " + UID + " and mob: " + mobile);
                     if (UID != null && mobile != 0 && name != null && !invID.isEmpty()) {
                         Log.d(TAG, "Started invite helper");
+                        boolean NOT_ADMIN_USER = false;
                         final User nUser = new User(name, mobile, NOT_ADMIN_USER);
 
                         Variables.alourtDatabaseReference.addListenerForSingleValueEvent(new ValueEventListener() {
@@ -285,8 +285,8 @@ public class Home extends AppCompatActivity implements View.OnClickListener {
                 }
                 break;
 
-            /**
-             * Creating a new group, uses UIDGeneratorService to create a new, unique UID for the group.
+            /*
+              Creating a new group, uses UIDGeneratorService to create a new, unique UID for the group.
              */
             case R.id.newGroupButton:
                 if (sph.loadGroup().isEmpty()) {
@@ -294,6 +294,7 @@ public class Home extends AppCompatActivity implements View.OnClickListener {
                     final String GroupID = uid.generateRandom();
                     Log.d(TAG, "New group initiated " + UID + " " + mobile + " " + name);
                     if (UID != null && mobile != 0 && name != null) {
+                        boolean ADMIN_USER = true;
                         User nUser = new User(name, mobile, ADMIN_USER);
                         Variables.alourtDatabaseReference.child(GroupID).child(getString(R.string.members_Firebase)).child(UID).setValue(nUser).addOnSuccessListener(new OnSuccessListener<Void>() {
                             @Override
