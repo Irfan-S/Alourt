@@ -36,6 +36,7 @@ import java.util.concurrent.TimeUnit;
 
 import irfan.apps.alourt.Handlers.SharedPrefsHandler;
 import irfan.apps.alourt.Services.AccessibilityKeyDetector;
+import irfan.apps.alourt.Utils.Variables;
 
 import static android.Manifest.permission.ACCESS_COARSE_LOCATION;
 import static android.Manifest.permission.ACCESS_FINE_LOCATION;
@@ -55,9 +56,6 @@ public class Login extends AppCompatActivity implements View.OnClickListener {
     private static final int STATE_SIGNIN_FAILED = 5;
     private static final int STATE_SIGNIN_SUCCESS = 6;
 
-    // [START declare_auth]
-    private FirebaseAuth mAuth;
-    // [END declare_auth]
 
     private boolean mVerificationInProgress = false;
     private String mVerificationId;
@@ -113,7 +111,9 @@ public class Login extends AppCompatActivity implements View.OnClickListener {
 
         // [START initialize_auth]
         // Initialize Firebase Auth
-        mAuth = FirebaseAuth.getInstance();
+        if (Variables.alourtAuth == null) {
+            Variables.alourtAuth = FirebaseAuth.getInstance();
+        }
         // [END initialize_auth]
         permissions.add(ACCESS_FINE_LOCATION);
         permissions.add(ACCESS_COARSE_LOCATION);
@@ -205,7 +205,7 @@ public class Login extends AppCompatActivity implements View.OnClickListener {
         super.onStart();
 
         // Check if user is signed in (non-null) and update UI accordingly.
-        FirebaseUser currentUser = mAuth.getCurrentUser();
+        FirebaseUser currentUser = Variables.alourtAuth.getCurrentUser();
         updateUI(currentUser);
 
         // [START_EXCLUDE]
@@ -370,7 +370,7 @@ public class Login extends AppCompatActivity implements View.OnClickListener {
 
     // [START sign_in_with_phone]
     private void signInWithPhoneAuthCredential(PhoneAuthCredential credential) {
-        mAuth.signInWithCredential(credential)
+        Variables.alourtAuth.signInWithCredential(credential)
                 .addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
                     @Override
                     public void onComplete(@NonNull Task<AuthResult> task) {
@@ -403,12 +403,12 @@ public class Login extends AppCompatActivity implements View.OnClickListener {
 
     //Sign out is disabled, as users should not be able to use more than one account per device.
     private void signOut() {
-        mAuth.signOut();
+        Variables.alourtAuth.signOut();
         updateUI(STATE_INITIALIZED);
     }
 
     private void updateUI(int uiState) {
-        updateUI(uiState, mAuth.getCurrentUser(), null);
+        updateUI(uiState, Variables.alourtAuth.getCurrentUser(), null);
     }
 
     private void updateUI(FirebaseUser user) {

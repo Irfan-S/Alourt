@@ -12,15 +12,13 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.auth.PhoneAuthProvider;
 
-//TODO design alert screen, and add in location transmission.
+import irfan.apps.alourt.Utils.Variables;
+
 
 public class SplashScreen extends AppCompatActivity {
 
-    private FirebaseAuth mAuth;
     private Intent intent;
-    private PhoneAuthProvider.OnVerificationStateChangedCallbacks mCallbacks;
 
     private final String TAG = "AlourtSplash";
 
@@ -39,21 +37,22 @@ public class SplashScreen extends AppCompatActivity {
 
             public void onTick(long millisecondsUntilDone) {
 
-                //countdown is counting(every second)
+                //Do nothing.
             }
 
             public void onFinish() {
                 Log.d(TAG, "Background sign-in running...");
-                mAuth = FirebaseAuth.getInstance();
-                FirebaseUser user = mAuth.getCurrentUser();
+                Variables.alourtAuth = FirebaseAuth.getInstance();
+                FirebaseUser user = Variables.alourtAuth.getCurrentUser();
+
+                //Fetching local instance of Firebase Auth. If it doesn't exist, then relaunch login page.
                 if (user != null) {
                     Log.d(TAG, "signInWithCredential:success");
-
-                    // [START_EXCLUDE]
                     startActivity(new Intent(getApplicationContext(), Home.class));
                     finish();
                 } else {
                     startActivity(intent);
+                    finish();
                 }
 
             }

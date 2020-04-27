@@ -18,18 +18,16 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 
 import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
-import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
 import irfan.apps.alourt.AlertPage;
 import irfan.apps.alourt.Handlers.Activator;
 import irfan.apps.alourt.Handlers.SharedPrefsHandler;
-import irfan.apps.alourt.Home;
 import irfan.apps.alourt.R;
+import irfan.apps.alourt.Utils.Variables;
 
 
 //TODO location not being sent check and fix
@@ -40,8 +38,6 @@ public class AccessibilityKeyDetector extends AccessibilityService {
     private final String TAG = "AccessKeyDetector";
     private int counter = 0;
     Intent notifyIntent;
-    FirebaseDatabase database;
-    DatabaseReference myRef;
 
     String activatorName;
 
@@ -121,7 +117,7 @@ public class AccessibilityKeyDetector extends AccessibilityService {
             } else {
                 user = new Activator(sph.loadMobile(), "NA", "NA", sph.loadName());
             }
-            myRef.child(group).child(getString(R.string.activated_Firebase)).setValue(user);
+            Variables.alourtDatabaseReference.child(group).child(getString(R.string.activated_Firebase)).setValue(user);
 
         }
 
@@ -134,11 +130,13 @@ public class AccessibilityKeyDetector extends AccessibilityService {
         isCreator = false;
         sph = new SharedPrefsHandler(getApplicationContext());
         group = sph.loadGroup();
-        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        if (Variables.alourtUser == null) {
+            Variables.alourtUser = FirebaseAuth.getInstance().getCurrentUser();
+        }
         if (group.isEmpty()) {
             detachListener();
         }
-        if (user != null) {
+        if (Variables.alourtUser != null) {
             attachListener();
         } else {
             Log.d(TAG, "Unable to start Firebase Auth, please retry");
@@ -185,10 +183,10 @@ public class AccessibilityKeyDetector extends AccessibilityService {
 
     @SuppressLint("MissingPermission")
     public void attachListener() {
-        database = FirebaseDatabase.getInstance();
         group = sph.loadGroup();
-
-        myRef = database.getReference(getString(R.string.groups_Firebase));
+        if (Variables.alourtDatabaseReference == null) {
+            Variables.alourtDatabaseReference = FirebaseDatabase.getInstance().getReference(getString(R.string.groups_Firebase));
+        }
 
         notifyIntent = new Intent(this, AlertPage.class);
 
@@ -202,7 +200,7 @@ public class AccessibilityKeyDetector extends AccessibilityService {
         //for (String bucket : buckets) {
         //temp =bucket;
         Log.d(TAG, "Attaching listener for" + group);
-        listener = myRef.child(group).addValueEventListener(new ValueEventListener() {
+        listener = Variables.alourtDatabaseReference.child(group).addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 Activator resp;
@@ -239,7 +237,7 @@ public class AccessibilityKeyDetector extends AccessibilityService {
     public void detachListener() {
         if (listener != null) {
             Log.d(TAG, "Detaching listener");
-            myRef.child(group).removeEventListener(listener);
+            Variables.alourtDatabaseReference.child(group).removeEventListener(listener);
             listener = null;
             sph.saveGroup(null);
         }
@@ -254,15 +252,13 @@ public class AccessibilityKeyDetector extends AccessibilityService {
         notifyIntent.putExtra("activator_name", activatorName);
         notifyIntent.putExtra(getString(R.string.mobile_IntentPackage), mobile);
         notifyIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-//        alertBuckets.clear();
-//        mobileAlerts.clear();
         getApplicationContext().startActivity(notifyIntent);
     }
 
     @Override
     public void onAccessibilityEvent(AccessibilityEvent event) {
         Log.d(TAG, "Accessibility event triggered");
-        if (Home.clean) {
+        if (Variables.shouldCleanListener) {
             Log.d(TAG, "Cleaning old listener");
             detachListener();
         }

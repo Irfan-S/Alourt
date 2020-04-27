@@ -1,7 +1,10 @@
 package irfan.apps.alourt;
 
+import android.content.Context;
 import android.content.Intent;
-import android.location.LocationManager;
+import android.net.ConnectivityManager;
+import android.net.Network;
+import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -21,10 +24,8 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
-import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
@@ -36,6 +37,7 @@ import irfan.apps.alourt.Handlers.SharedPrefsHandler;
 import irfan.apps.alourt.Handlers.User;
 import irfan.apps.alourt.Services.AccessibilityKeyDetector;
 import irfan.apps.alourt.Services.UIDGeneratorService;
+import irfan.apps.alourt.Utils.Variables;
 
 //TODO on leaving a group, create a way to remove all listeners before starting a new one.
 
@@ -43,8 +45,6 @@ public class Home extends AppCompatActivity implements View.OnClickListener {
 
     EditText inviteId;
     Button submitInviteIdButton;
-
-    public static boolean clean = false;
 
     List<User> userList;
 
@@ -57,19 +57,15 @@ public class Home extends AppCompatActivity implements View.OnClickListener {
 
     TextView tumbleTxt;
 
-    FirebaseUser user;
     private RecyclerView membersRecycler;
     private MemberAdapter memberAdapter;
     String UID;
 
-    LocationManager locationManager;
-    boolean GpsStatus;
 
     ImageView img;
     Animation aniRotate;
 
     SharedPrefsHandler sph;
-    DatabaseReference dbr;
 
 
     private final String TAG = "AlourtHome";
@@ -83,12 +79,16 @@ public class Home extends AppCompatActivity implements View.OnClickListener {
         setContentView(R.layout.activity_home);
         getSupportActionBar().hide();
         sph = new SharedPrefsHandler(getApplicationContext());
-
+        isNetworkConnected();
         disp = findViewById(R.id.key_disp);
         group = sph.loadGroup();
-        user = FirebaseAuth.getInstance().getCurrentUser();
-        dbr = FirebaseDatabase.getInstance().getReference(getString(R.string.groups_Firebase));
-        img = (ImageView) findViewById(R.id.tumbleweed_anim_image);
+        if (Variables.alourtUser == null) {
+            Variables.alourtUser = FirebaseAuth.getInstance().getCurrentUser();
+        }
+        if (Variables.alourtDatabaseReference == null) {
+            Variables.alourtDatabaseReference = FirebaseDatabase.getInstance().getReference(getString(R.string.groups_Firebase));
+        }
+        img = findViewById(R.id.tumbleweed_anim_image);
         tumbleTxt = findViewById(R.id.tumbleweed_txt);
 
 
@@ -126,7 +126,7 @@ public class Home extends AppCompatActivity implements View.OnClickListener {
         leaveGroupButton.setOnClickListener(this);
 
 
-        UID = user.getUid();
+        UID = Variables.alourtUser.getUid();
         name = sph.loadName();
         mobile = sph.loadMobile();
 
@@ -211,9 +211,9 @@ public class Home extends AppCompatActivity implements View.OnClickListener {
 
     public void updateMemberDisplay() {
         //Check if network present and if user is in group
-        if (true) {
+        if (Variables.isNetworkConnected) {
 
-            dbr.child(group).child(getString(R.string.members_Firebase)).addListenerForSingleValueEvent(new ValueEventListener() {
+            Variables.alourtDatabaseReference.child(group).child(getString(R.string.members_Firebase)).addListenerForSingleValueEvent(new ValueEventListener() {
                 @Override
                 public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                     userList.clear();
@@ -232,6 +232,8 @@ public class Home extends AppCompatActivity implements View.OnClickListener {
 
                 }
             });
+        } else {
+            //Show an animation for no netowkr.
         }
 
     }
@@ -244,38 +246,42 @@ public class Home extends AppCompatActivity implements View.OnClickListener {
              *  Joining a group, using a specified invite ID.
              */
             case R.id.inviteIdSubmitButton:
-                final String invID = inviteId.getText().toString();
-                mobile = sph.loadMobile();
-                Log.d(TAG, "Clicked " + UID + " and mob: " + mobile);
-                if (UID != null && mobile != 0 && name != null && !invID.isEmpty()) {
-                    Log.d(TAG, "Started invite helper");
-                    final User nUser = new User(name, mobile, NOT_ADMIN_USER);
+                if (sph.loadGroup().isEmpty()) {
+                    final String invID = inviteId.getText().toString();
+                    mobile = sph.loadMobile();
+                    Log.d(TAG, "Clicked " + UID + " and mob: " + mobile);
+                    if (UID != null && mobile != 0 && name != null && !invID.isEmpty()) {
+                        Log.d(TAG, "Started invite helper");
+                        final User nUser = new User(name, mobile, NOT_ADMIN_USER);
 
-                    dbr.addListenerForSingleValueEvent(new ValueEventListener() {
-                        @Override
-                        public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                            if (dataSnapshot.hasChild(invID)) {
-                                dbr.child(invID).child(getString(R.string.members_Firebase)).child(UID).setValue(nUser).addOnSuccessListener(new OnSuccessListener<Void>() {
-                                    @Override
-                                    public void onSuccess(Void aVoid) {
-                                        sph.saveGroup(invID);
-                                        disp.setText("Your group is " + invID);
-                                        startService(new Intent(getApplicationContext(), AccessibilityKeyDetector.class));
-                                        Toast.makeText(getApplicationContext(), "Successfully joined group", Toast.LENGTH_LONG).show();
-                                        updateAnimation();
-                                    }
+                        Variables.alourtDatabaseReference.addListenerForSingleValueEvent(new ValueEventListener() {
+                            @Override
+                            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                                if (dataSnapshot.hasChild(invID)) {
+                                    Variables.alourtDatabaseReference.child(invID).child(getString(R.string.members_Firebase)).child(UID).setValue(nUser).addOnSuccessListener(new OnSuccessListener<Void>() {
+                                        @Override
+                                        public void onSuccess(Void aVoid) {
+                                            sph.saveGroup(invID);
+                                            disp.setText("Your group is " + invID);
+                                            startService(new Intent(getApplicationContext(), AccessibilityKeyDetector.class));
+                                            Toast.makeText(getApplicationContext(), "Successfully joined group", Toast.LENGTH_LONG).show();
+                                            updateAnimation();
+                                        }
 
-                                });
-                            } else {
-                                Toast.makeText(getApplicationContext(), "Invalid ID", Toast.LENGTH_LONG).show();
+                                    });
+                                } else {
+                                    Toast.makeText(getApplicationContext(), "Invalid ID", Toast.LENGTH_LONG).show();
+                                }
                             }
-                        }
 
-                        @Override
-                        public void onCancelled(@NonNull DatabaseError databaseError) {
+                            @Override
+                            public void onCancelled(@NonNull DatabaseError databaseError) {
 
-                        }
-                    });
+                            }
+                        });
+                    }
+                } else {
+                    Toast.makeText(getApplicationContext(), "Please leave your existing group before joining a new one", Toast.LENGTH_SHORT).show();
                 }
                 break;
 
@@ -283,33 +289,37 @@ public class Home extends AppCompatActivity implements View.OnClickListener {
              * Creating a new group, uses UIDGeneratorService to create a new, unique UID for the group.
              */
             case R.id.newGroupButton:
-                UIDGeneratorService uid = new UIDGeneratorService(this);
-                final String GroupID = uid.generateRandom();
-                Log.d(TAG, "New group initiated " + UID + " " + mobile + " " + name);
-                if (UID != null && mobile != 0 && name != null) {
-                    User nUser = new User(name, mobile, ADMIN_USER);
-                    dbr.child(GroupID).child(getString(R.string.members_Firebase)).child(UID).setValue(nUser).addOnSuccessListener(new OnSuccessListener<Void>() {
-                        @Override
-                        public void onSuccess(Void aVoid) {
-                            sph.saveGroup(GroupID);
-                            disp.setText("Your group is " + GroupID);
-                            startService(new Intent(getApplicationContext(), AccessibilityKeyDetector.class));
-                            Toast.makeText(getApplicationContext(), "Group created successfully", Toast.LENGTH_LONG).show();
-                            //dbr.child(GroupID).child(getString(R.string.activated_Firebase)).setValue(0);
-                            updateAnimation();
-                        }
-                    });
+                if (sph.loadGroup().isEmpty()) {
+                    UIDGeneratorService uid = new UIDGeneratorService(this);
+                    final String GroupID = uid.generateRandom();
+                    Log.d(TAG, "New group initiated " + UID + " " + mobile + " " + name);
+                    if (UID != null && mobile != 0 && name != null) {
+                        User nUser = new User(name, mobile, ADMIN_USER);
+                        Variables.alourtDatabaseReference.child(GroupID).child(getString(R.string.members_Firebase)).child(UID).setValue(nUser).addOnSuccessListener(new OnSuccessListener<Void>() {
+                            @Override
+                            public void onSuccess(Void aVoid) {
+                                sph.saveGroup(GroupID);
+                                disp.setText("Your group is " + GroupID);
+                                startService(new Intent(getApplicationContext(), AccessibilityKeyDetector.class));
+                                Toast.makeText(getApplicationContext(), "Group created successfully", Toast.LENGTH_LONG).show();
+                                //dbr.child(GroupID).child(getString(R.string.activated_Firebase)).setValue(0);
+                                updateAnimation();
+                            }
+                        });
 
+                    }
+                } else {
+                    Toast.makeText(getApplicationContext(), "Please leave your existing group before creating a new one", Toast.LENGTH_SHORT).show();
                 }
                 break;
 
             case R.id.leaveGroupButton:
                 final String groupID = sph.loadGroup();
                 if (!groupID.isEmpty()) {
-                    dbr.child(groupID).child(getString(R.string.members_Firebase)).child(UID).setValue(null).addOnSuccessListener(new OnSuccessListener<Void>() {
+                    Variables.alourtDatabaseReference.child(groupID).child(getString(R.string.members_Firebase)).child(UID).setValue(null).addOnSuccessListener(new OnSuccessListener<Void>() {
                         @Override
                         public void onSuccess(Void aVoid) {
-                            clean = true;
+                            Variables.shouldCleanListener = true;
                             disp.setText("No group assigned");
                             startService(new Intent(getApplicationContext(), AccessibilityKeyDetector.class));
                             Toast.makeText(getApplicationContext(), "Successfully left group", Toast.LENGTH_LONG).show();
@@ -317,11 +327,41 @@ public class Home extends AppCompatActivity implements View.OnClickListener {
                             updateAnimation();
                         }
                     });
+                } else {
+                    Toast.makeText(getApplicationContext(), "You aren't a part of any group", Toast.LENGTH_SHORT).show();
                 }
 
         }
 
 
+    }
+
+    public void isNetworkConnected() {
+        try {
+            ConnectivityManager connectivityManager = (ConnectivityManager) this.getSystemService(Context.CONNECTIVITY_SERVICE);
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                connectivityManager.registerDefaultNetworkCallback(new ConnectivityManager.NetworkCallback() {
+                                                                       @Override
+                                                                       public void onAvailable(Network network) {
+                                                                           Variables.isNetworkConnected = true; // Global Static Variable
+                                                                       }
+
+                                                                       @Override
+                                                                       public void onLost(Network network) {
+                                                                           Variables.isNetworkConnected = false; // Global Static Variable
+                                                                       }
+                                                                   }
+
+                );
+            } else {
+                ConnectivityManager cm = (ConnectivityManager) this.getSystemService(Context.CONNECTIVITY_SERVICE);
+                Variables.isNetworkConnected = (cm.getActiveNetworkInfo() != null);
+            }
+            Variables.isNetworkConnected = false;
+        } catch (Exception e) {
+            Variables.isNetworkConnected = false;
+        }
     }
 
 }
