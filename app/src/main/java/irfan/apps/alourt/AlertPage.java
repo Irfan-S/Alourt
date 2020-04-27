@@ -1,3 +1,10 @@
+/*
+ * Copyright (c) 2020 Irfan S.
+ * Unauthorized copying of this file, via any medium is strictly prohibited
+ *  Proprietary and confidential
+ *  Written by Syed Irfan Ahmed <irfansa1@ymail.com>
+ */
+
 package irfan.apps.alourt;
 
 import android.annotation.SuppressLint;
@@ -149,7 +156,7 @@ public class AlertPage extends AppCompatActivity {
 //            });
         if (isAdminOrCreator && !group.isEmpty()) {
             myRef.child(group).child(getString(R.string.activated_Firebase)).setValue(null);
-            }
+        }
         //    }
         finish();
     }

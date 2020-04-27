@@ -1,3 +1,10 @@
+<!--
+  ~ Copyright (c) 2020 Irfan S.
+  ~ Unauthorized copying of this file, via any medium is strictly prohibited
+  ~  Proprietary and confidential
+  ~  Written by Syed Irfan Ahmed <irfansa1@ymail.com>
+  -->
+
 <resources>
     <string name="app_name">Alourt</string>
     <string name="accessibility_service_description">This permission is only used to allow you to use the volume buttons to trigger an alert message.</string>

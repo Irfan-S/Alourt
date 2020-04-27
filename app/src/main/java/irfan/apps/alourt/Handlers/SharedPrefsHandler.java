@@ -1,3 +1,10 @@
+/*
+ * Copyright (c) 2020 Irfan S.
+ * Unauthorized copying of this file, via any medium is strictly prohibited
+ *  Proprietary and confidential
+ *  Written by Syed Irfan Ahmed <irfansa1@ymail.com>
+ */
+
 package irfan.apps.alourt.Handlers;
 
 import android.content.Context;
@@ -51,6 +58,7 @@ public class SharedPrefsHandler {
     public String loadName() {
         return sharedPreferences.getString(context.getString(R.string.username_sharedpreferences), "");
     }
+
     public long loadMobile() {
         return sharedPreferences.getLong(context.getString(R.string.mobile_sharedpreferences), 0);
     }

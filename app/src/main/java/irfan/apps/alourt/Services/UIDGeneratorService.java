@@ -1,3 +1,10 @@
+/*
+ * Copyright (c) 2020 Irfan S.
+ * Unauthorized copying of this file, via any medium is strictly prohibited
+ *  Proprietary and confidential
+ *  Written by Syed Irfan Ahmed <irfansa1@ymail.com>
+ */
+
 package irfan.apps.alourt.Services;
 
 import android.app.Activity;
