@@ -31,9 +31,9 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
 import irfan.apps.alourt.AlertPage;
-import irfan.apps.alourt.Handlers.Activator;
 import irfan.apps.alourt.Handlers.SharedPrefsHandler;
 import irfan.apps.alourt.R;
+import irfan.apps.alourt.Utils.Activator;
 import irfan.apps.alourt.Utils.Variables;
 
 
@@ -54,9 +54,12 @@ public class AccessibilityKeyDetector extends AccessibilityService {
 
     boolean isCreator;
 
+
     String latitude;
     String longitude;
 
+    LocationManager locationManager;
+    LocationListener locationListener;
     Long mobile;
 //    ArrayList<String> buckets,alertBuckets;
 //    ArrayList<String> mobileAlerts;
@@ -116,8 +119,6 @@ public class AccessibilityKeyDetector extends AccessibilityService {
         // Write a message to the database
         //for (String bucket : buckets) {
         if (!group.isEmpty()) {
-            checkGpsStatus();
-            attachGPSListener();
             Activator user;
             if (latitude != null & longitude != null) {
                 user = new Activator(sph.loadMobile(), latitude, longitude, sph.loadName());
@@ -125,6 +126,10 @@ public class AccessibilityKeyDetector extends AccessibilityService {
                 user = new Activator(sph.loadMobile(), "NA", "NA", sph.loadName());
             }
             Variables.alourtDatabaseReference.child(group).child(getString(R.string.activated_Firebase)).setValue(user);
+            if (isCreator) {
+                checkGpsStatus();
+                attachGPSListener();
+            }
 
         }
 
@@ -153,39 +158,79 @@ public class AccessibilityKeyDetector extends AccessibilityService {
 
     @SuppressLint("MissingPermission")
     public void attachGPSListener() {
-        LocationManager locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+        locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
         // Define the criteria how to select the locatioin provider -> use
         // default
+        Log.d(TAG, "Attaching GPS Listener");
+        Location locationGPS = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+        Location locationNet = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
 
-        LocationListener locationListener = new LocationListener() {
-            @Override
-            public void onLocationChanged(Location location) {
-                longitude = String.valueOf(location.getLongitude());
-                Log.v(TAG, longitude);
-                latitude = String.valueOf(location.getLatitude());
-                Log.v(TAG, latitude);
-            }
+        long GPSLocationTime = 0;
+        if (null != locationGPS) {
+            GPSLocationTime = locationGPS.getTime();
+        }
 
-            @Override
-            public void onStatusChanged(String provider, int status, Bundle extras) {
+        long NetLocationTime = 0;
 
-            }
+        if (null != locationNet) {
+            NetLocationTime = locationNet.getTime();
+        }
 
-            @Override
-            public void onProviderEnabled(String provider) {
+        if (0 < GPSLocationTime - NetLocationTime) {
+            Log.d(TAG, "Using old GPS location");
+            latitude = String.valueOf(locationGPS.getLatitude());
+            longitude = String.valueOf(locationGPS.getLongitude());
+            Variables.alourtDatabaseReference.child(group).child(getString(R.string.activated_Firebase)).child("latitude").setValue(latitude);
+            Variables.alourtDatabaseReference.child(group).child(getString(R.string.activated_Firebase)).child("longitude").setValue(longitude);
+        } else {
+            Log.d(TAG, "Using old Net location");
+            latitude = String.valueOf(locationNet.getLatitude());
+            longitude = String.valueOf(locationNet.getLongitude());
+            Variables.alourtDatabaseReference.child(group).child(getString(R.string.activated_Firebase)).child("latitude").setValue(latitude);
+            Variables.alourtDatabaseReference.child(group).child(getString(R.string.activated_Firebase)).child("longitude").setValue(longitude);
+        }
+        if (latitude == null && longitude == null) {
+            locationListener = new LocationListener() {
+                @Override
+                public void onLocationChanged(Location location) {
+                    Variables.shouldGpsBeOff = true;
+                    longitude = String.valueOf(location.getLongitude());
+                    Log.v(TAG, longitude);
+                    latitude = String.valueOf(location.getLatitude());
+                    Log.v(TAG, latitude);
+                    Variables.alourtDatabaseReference.child(group).child(getString(R.string.activated_Firebase)).child("latitude").setValue(latitude);
+                    Variables.alourtDatabaseReference.child(group).child(getString(R.string.activated_Firebase)).child("longitude").setValue(longitude);
+                    detachGPSListener();
+                }
 
-            }
 
-            @Override
-            public void onProviderDisabled(String provider) {
+                @Override
+                public void onStatusChanged(String provider, int status, Bundle extras) {
 
-            }
-        };
-        locationManager.requestLocationUpdates(
-                LocationManager.NETWORK_PROVIDER, 5000, 0, locationListener);
-        locationManager.requestLocationUpdates(
-                LocationManager.GPS_PROVIDER, 5000, 0, locationListener
-        );
+                }
+
+                @Override
+                public void onProviderEnabled(String provider) {
+
+                }
+
+                @Override
+                public void onProviderDisabled(String provider) {
+
+                }
+            };
+            locationManager.requestLocationUpdates(
+                    LocationManager.NETWORK_PROVIDER, 5000, 0, locationListener);
+            locationManager.requestLocationUpdates(
+                    LocationManager.GPS_PROVIDER, 5000, 0, locationListener);
+        }
+    }
+
+    public void detachGPSListener() {
+        Log.d(TAG, "Detaching GPS listener");
+        if (locationManager != null && Variables.shouldGpsBeOff) {
+            locationManager.removeUpdates(locationListener);
+        }
     }
 
     @SuppressLint("MissingPermission")
@@ -254,8 +299,6 @@ public class AccessibilityKeyDetector extends AccessibilityService {
         Log.d(TAG, "Initiating alert box");
         notifyIntent.putExtra(getString(R.string.isCreator_IntentPackage), isCreator);
         notifyIntent.putExtra(getString(R.string.group_name_IntentPackage), group);
-        notifyIntent.putExtra("latitude", latitude);
-        notifyIntent.putExtra("longitude", longitude);
         notifyIntent.putExtra("activator_name", activatorName);
         notifyIntent.putExtra(getString(R.string.mobile_IntentPackage), mobile);
         notifyIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
@@ -268,6 +311,7 @@ public class AccessibilityKeyDetector extends AccessibilityService {
         if (Variables.shouldCleanListener) {
             Log.d(TAG, "Cleaning old listener");
             detachListener();
+            Variables.shouldCleanListener = false;
         }
 
     }

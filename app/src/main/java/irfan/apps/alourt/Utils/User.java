@@ -5,7 +5,7 @@
  *  Written by Syed Irfan Ahmed <irfansa1@ymail.com>
  */
 
-package irfan.apps.alourt.Handlers;
+package irfan.apps.alourt.Utils;
 
 public class User {
     String userName;

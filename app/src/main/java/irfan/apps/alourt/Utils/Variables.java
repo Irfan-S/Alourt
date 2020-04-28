@@ -20,6 +20,7 @@ public class Variables {
     public static FirebaseAuth alourtAuth;
     public static FirebaseUser alourtUser;
     private Context context;
+    public static boolean shouldGpsBeOff = false;
     public static boolean isNetworkConnected = false;
 
     public Variables(Context context) {

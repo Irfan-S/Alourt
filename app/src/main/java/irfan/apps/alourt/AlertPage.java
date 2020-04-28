@@ -13,7 +13,6 @@ import android.content.pm.PackageManager;
 import android.hardware.Camera;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraManager;
-import android.location.LocationManager;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.media.RingtoneManager;
@@ -26,19 +25,22 @@ import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 
 import irfan.apps.alourt.Handlers.SharedPrefsHandler;
 import irfan.apps.alourt.Services.AccessibilityKeyDetector;
+import irfan.apps.alourt.Utils.Variables;
 
 public class AlertPage extends AppCompatActivity {
 
     //TODO create an SMS service that sends the bucket(s) the user is attached to as a body. Which is then used later on by Alourt's server. Sending credentials could be vulnerable.
-    //TODO add in latitude, longitude and name displays.
     AudioManager audioM;
     CameraManager mCameraManager;
     TextView dispTxt;
@@ -53,18 +55,13 @@ public class AlertPage extends AppCompatActivity {
     SharedPrefsHandler sph;
     boolean isAdminOrCreator;
 
-    private LocationManager locationManager = null;
-//    private LocationListener locationListener=null;
-
-    String name;
     String latitude;
     String longitude;
+
+    String name;
     String group;
     long mobile;
 
-//    ArrayList<String> buckets;
-//    ArrayList<String> mobiles;
-//    String bucket;
 
     @SuppressLint("MissingPermission")
     @Override
@@ -72,31 +69,32 @@ public class AlertPage extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_alert);
         getSupportActionBar().hide();
-        //locationListener = new MyLocationListener();
-
 
         Intent in = getIntent();
         dispTxt = findViewById(R.id.alertText);
         nametxt = findViewById(R.id.nameAlertTxt);
         latidudeDisp = findViewById(R.id.latitudetxt);
         longitudeDisp = findViewById(R.id.longitudetxt);
+        if (Variables.alourtDatabaseReference == null) {
+            Variables.alourtDatabaseReference = FirebaseDatabase.getInstance().getReference(getString(R.string.groups_Firebase));
+        }
+
 //        buckets = new ArrayList<>();
 //        mobiles = new ArrayList<>();
         group = in.getStringExtra(getString(R.string.group_name_IntentPackage));
         mobile = in.getLongExtra(getString(R.string.mobile_IntentPackage), 0);
-        latitude = in.getStringExtra("latitude");
-        longitude = in.getStringExtra("longitude");
         name = in.getStringExtra("activator_name");
         isAdminOrCreator = in.getBooleanExtra(getString(R.string.isCreator_IntentPackage), false);
         dispTxt.setText(mobile + " from " + group + " needs help");
         nametxt.setText("Name: " + name);
-        latidudeDisp.setText("Last known latitude: " + latitude);
-        longitudeDisp.setText("Last known longitude: " + longitude);
+//        latidudeDisp.setText("Last known latitude: " + latitude);
+//        longitudeDisp.setText("Last known longitude: " + longitude);
         sph = new SharedPrefsHandler(getApplicationContext());
         Log.d(TAG, "Activity launched");
         audioM = (AudioManager) getSystemService(AUDIO_SERVICE);
         Thread thread = new Thread(new Runnable() {
             public void run() {
+                fetchLocationData();
                 startNotificationCycle();
             }
         });
@@ -129,35 +127,12 @@ public class AlertPage extends AppCompatActivity {
 
     private void stopAlertBroadcast() {
         // Write a message to the database
-        //ArrayList<String> buckets = sph.retrieveBuckets();
-        FirebaseDatabase database = FirebaseDatabase.getInstance();
-        DatabaseReference myRef = database.getReference(getString(R.string.groups_Firebase));
-
-        //for (String locBucket : buckets) {
-        //    bucket = locBucket;
-//            myRef.addListenerForSingleValueEvent(new ValueEventListener() {
-//                @Override
-//                public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-//                    if(isAdminOrCreator){
-//
-//                    }
-//                    try {
-//                        isAdminOrCreator = dataSnapshot.child(group).child(getString(R.string.members_Firebase)).child(sph.loadUID()).child(getString(R.string.adminStatus_Firebase)).getValue(Boolean.class);
-//                    }catch (NullPointerException e){
-//                        Log.d(TAG,"Data not found");
-//                    }
-//                        Log.d(TAG,"Is current user admin/creator for "+group+ "is "+ isAdminOrCreator);
-//                }
-//
-//                @Override
-//                public void onCancelled(@NonNull DatabaseError databaseError) {
-//
-//                }
-//            });
-        if (isAdminOrCreator && !group.isEmpty()) {
-            myRef.child(group).child(getString(R.string.activated_Firebase)).setValue(null);
+        if (Variables.alourtDatabaseReference == null) {
+            Variables.alourtDatabaseReference = FirebaseDatabase.getInstance().getReference(getString(R.string.groups_Firebase));
         }
-        //    }
+        if (isAdminOrCreator && !group.isEmpty()) {
+            Variables.alourtDatabaseReference.child(group).child(getString(R.string.activated_Firebase)).setValue(null);
+        }
         finish();
     }
 
@@ -265,6 +240,26 @@ public class AlertPage extends AppCompatActivity {
         toggleSwitch = false;
         audioOff();
         stopAlertBroadcast();
+    }
+
+
+    private void fetchLocationData() {
+
+        Variables.alourtDatabaseReference.child(group).child(getString(R.string.activated_Firebase)).addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                Log.d(TAG, "Data updated, checking.. " + dataSnapshot.getValue());
+                latitude = dataSnapshot.child("latitude").getValue(String.class);
+                longitude = dataSnapshot.child("longitude").getValue(String.class);
+                latidudeDisp.setText("Last known latitude :" + latitude);
+                longitudeDisp.setText("Last known longitude :" + longitude);
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+            }
+        });
     }
 
 

@@ -38,12 +38,13 @@ import com.google.firebase.database.ValueEventListener;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 import irfan.apps.alourt.Handlers.MemberAdapter;
 import irfan.apps.alourt.Handlers.SharedPrefsHandler;
-import irfan.apps.alourt.Handlers.User;
 import irfan.apps.alourt.Services.AccessibilityKeyDetector;
 import irfan.apps.alourt.Services.UIDGeneratorService;
+import irfan.apps.alourt.Utils.User;
 import irfan.apps.alourt.Utils.Variables;
 
 //TODO on leaving a group, create a way to remove all listeners before starting a new one.
@@ -83,7 +84,7 @@ public class Home extends AppCompatActivity implements View.OnClickListener {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_home);
-        getSupportActionBar().hide();
+        Objects.requireNonNull(getSupportActionBar()).hide();
         sph = new SharedPrefsHandler(getApplicationContext());
         isNetworkConnected();
         disp = findViewById(R.id.key_disp);
@@ -109,17 +110,6 @@ public class Home extends AppCompatActivity implements View.OnClickListener {
         membersRecycler.setLayoutManager(mLayoutManager);
         membersRecycler.setItemAnimator(new DefaultItemAnimator());
         membersRecycler.setAdapter(memberAdapter);
-        // updateAnimation();
-//        if (!group.isEmpty()) {
-//            img.setVisibility(View.GONE);
-//            tumbleTxt.setVisibility(View.GONE);
-//            disp.setText("Group: " + group);
-//            updateMemberDisplay();
-//        } else {
-//            disp.setText("No groups assigned");
-//            img.setVisibility(View.VISIBLE);
-//            membersRecycler.setVisibility(View.GONE);
-//        }
 
         inviteId = findViewById(R.id.inviteId);
         submitInviteIdButton = findViewById(R.id.inviteIdSubmitButton);
@@ -239,7 +229,7 @@ public class Home extends AppCompatActivity implements View.OnClickListener {
                 }
             });
         } else {
-            //Show an animation for no netowkr.
+            //Show an animation for no network.
         }
 
     }

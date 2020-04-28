@@ -20,6 +20,8 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 
+import java.util.Objects;
+
 import irfan.apps.alourt.Utils.Variables;
 
 
@@ -35,7 +37,9 @@ public class SplashScreen extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_splash);
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
-        getSupportActionBar().hide();
+
+        //To prevent app crashes of support action bar is null
+        Objects.requireNonNull(getSupportActionBar()).hide();
 
 
         intent = new Intent(getApplicationContext(), Login.class);

@@ -17,6 +17,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import java.util.List;
 
 import irfan.apps.alourt.R;
+import irfan.apps.alourt.Utils.User;
 
 public class MemberAdapter extends RecyclerView.Adapter<MemberAdapter.MyViewHolder> {
 
