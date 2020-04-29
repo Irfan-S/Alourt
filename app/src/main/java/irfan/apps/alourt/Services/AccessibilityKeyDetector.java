@@ -11,10 +11,7 @@ import android.accessibilityservice.AccessibilityService;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
-import android.location.Location;
-import android.location.LocationListener;
 import android.location.LocationManager;
-import android.os.Bundle;
 import android.os.CountDownTimer;
 import android.provider.Settings;
 import android.util.Log;
@@ -24,6 +21,11 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 
+import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationCallback;
+import com.google.android.gms.location.LocationRequest;
+import com.google.android.gms.location.LocationResult;
+import com.google.android.gms.location.LocationServices;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
@@ -34,12 +36,14 @@ import irfan.apps.alourt.AlertPage;
 import irfan.apps.alourt.Handlers.SharedPrefsHandler;
 import irfan.apps.alourt.R;
 import irfan.apps.alourt.Utils.Activator;
+import irfan.apps.alourt.Utils.FetchAddressTask;
 import irfan.apps.alourt.Utils.Variables;
 
 
 //TODO location not being sent check and fix
 
-public class AccessibilityKeyDetector extends AccessibilityService {
+public class AccessibilityKeyDetector extends AccessibilityService implements
+        FetchAddressTask.OnTaskCompleted {
 
 
     private final String TAG = "AccessKeyDetector";
@@ -52,17 +56,13 @@ public class AccessibilityKeyDetector extends AccessibilityService {
 
     String group;
 
-    boolean isCreator;
+    private FusedLocationProviderClient mFusedLocationClient;
+    private LocationCallback mLocationCallback;
 
 
-    String latitude;
-    String longitude;
+    String location;
 
-    LocationManager locationManager;
-    LocationListener locationListener;
     Long mobile;
-//    ArrayList<String> buckets,alertBuckets;
-//    ArrayList<String> mobileAlerts;
 
     SharedPrefsHandler sph;
 
@@ -75,8 +75,6 @@ public class AccessibilityKeyDetector extends AccessibilityService {
 
         group = sph.loadGroup();
         attachListener();
-
-
         //To trigger, press vol up, vol down and vol up again. Need a wait system that will wait for input within the next 2 seconds, or it will just reset
 
         if (counter % 2 == 0 && event.getKeyCode() == 24) {
@@ -96,10 +94,11 @@ public class AccessibilityKeyDetector extends AccessibilityService {
             }.start();
         } else if (counter == 5) {
             Log.d(TAG, "Triggering ringtone...");
-            sendAlertBroadcast();
+            checkGpsStatus();
+            attachGPSListener();
+            startTrackingLocation();
             activatorName = sph.loadName();
-            isCreator = true;
-            attachListener();
+            Variables.isCreator = true;
             counter = 0;
         } else if (counter % 2 == 1 && event.getKeyCode() == 25) {
             counter += 2;
@@ -112,34 +111,28 @@ public class AccessibilityKeyDetector extends AccessibilityService {
         return op;
     }
 
-    /**
-     * Sends alert message to firebase thru "activated" node for all groups the user is a part of. Attaches mobile number into node.
-     */
-    private void sendAlertBroadcast() {
-        // Write a message to the database
-        //for (String bucket : buckets) {
-        if (!group.isEmpty()) {
-            Activator user;
-            if (latitude != null & longitude != null) {
-                user = new Activator(sph.loadMobile(), latitude, longitude, sph.loadName());
-            } else {
-                user = new Activator(sph.loadMobile(), "NA", "NA", sph.loadName());
-            }
-            Variables.alourtDatabaseReference.child(group).child(getString(R.string.activated_Firebase)).setValue(user);
-            if (isCreator) {
-                checkGpsStatus();
-                attachGPSListener();
-            }
-
-        }
-
-        //}
-    }
+//    /**
+//     * Sends alert message to firebase thru "activated" node for all groups the user is a part of. Attaches mobile number into node.
+//     */
+//    private void sendAlertBroadcast() {
+//        if (Variables.alourtDatabaseReference == null) {
+//            Variables.alourtDatabaseReference = FirebaseDatabase.getInstance().getReference(getString(R.string.groups_Firebase));
+//        }
+//        // Write a message to the database
+//        //for (String bucket : buckets) {
+//        Log.d(TAG,"Sending broadcast..");
+//        if (!group.isEmpty()) {
+//            checkGpsStatus();attachGPSListener();startTrackingLocation();
+//
+//
+//        }
+//
+//        //}
+//    }
 
     @Override
     protected void onServiceConnected() {
         Log.i(TAG, "Service connected");
-        isCreator = false;
         sph = new SharedPrefsHandler(getApplicationContext());
         group = sph.loadGroup();
         if (Variables.alourtUser == null) {
@@ -158,131 +151,83 @@ public class AccessibilityKeyDetector extends AccessibilityService {
 
     @SuppressLint("MissingPermission")
     public void attachGPSListener() {
-        locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-        // Define the criteria how to select the locatioin provider -> use
-        // default
-        Log.d(TAG, "Attaching GPS Listener");
-        Location locationGPS = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
-        Location locationNet = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
+        mFusedLocationClient = LocationServices.getFusedLocationProviderClient(
+                this);
 
-        long GPSLocationTime = 0;
-        if (null != locationGPS) {
-            GPSLocationTime = locationGPS.getTime();
-        }
-
-        long NetLocationTime = 0;
-
-        if (null != locationNet) {
-            NetLocationTime = locationNet.getTime();
-        }
-
-        if (0 < GPSLocationTime - NetLocationTime) {
-            Log.d(TAG, "Using old GPS location");
-            latitude = String.valueOf(locationGPS.getLatitude());
-            longitude = String.valueOf(locationGPS.getLongitude());
-            Variables.alourtDatabaseReference.child(group).child(getString(R.string.activated_Firebase)).child("latitude").setValue(latitude);
-            Variables.alourtDatabaseReference.child(group).child(getString(R.string.activated_Firebase)).child("longitude").setValue(longitude);
-        } else {
-            Log.d(TAG, "Using old Net location");
-            latitude = String.valueOf(locationNet.getLatitude());
-            longitude = String.valueOf(locationNet.getLongitude());
-            Variables.alourtDatabaseReference.child(group).child(getString(R.string.activated_Firebase)).child("latitude").setValue(latitude);
-            Variables.alourtDatabaseReference.child(group).child(getString(R.string.activated_Firebase)).child("longitude").setValue(longitude);
-        }
-        if (latitude == null && longitude == null) {
-            locationListener = new LocationListener() {
-                @Override
-                public void onLocationChanged(Location location) {
-                    Variables.shouldGpsBeOff = true;
-                    longitude = String.valueOf(location.getLongitude());
-                    Log.v(TAG, longitude);
-                    latitude = String.valueOf(location.getLatitude());
-                    Log.v(TAG, latitude);
-                    Variables.alourtDatabaseReference.child(group).child(getString(R.string.activated_Firebase)).child("latitude").setValue(latitude);
-                    Variables.alourtDatabaseReference.child(group).child(getString(R.string.activated_Firebase)).child("longitude").setValue(longitude);
-                    detachGPSListener();
+        mLocationCallback = new LocationCallback() {
+            /**
+             * This is the callback that is triggered when the
+             * FusedLocationClient updates your location.
+             *
+             * @param locationResult The result containing the device location.
+             */
+            @Override
+            public void onLocationResult(LocationResult locationResult) {
+                // If tracking is turned on, reverse geocode into an address
+                if (Variables.shouldGpsBeOff) {
+                    new FetchAddressTask(AccessibilityKeyDetector.this, AccessibilityKeyDetector.this)
+                            .execute(locationResult.getLastLocation());
                 }
-
-
-                @Override
-                public void onStatusChanged(String provider, int status, Bundle extras) {
-
-                }
-
-                @Override
-                public void onProviderEnabled(String provider) {
-
-                }
-
-                @Override
-                public void onProviderDisabled(String provider) {
-
-                }
-            };
-            locationManager.requestLocationUpdates(
-                    LocationManager.NETWORK_PROVIDER, 5000, 0, locationListener);
-            locationManager.requestLocationUpdates(
-                    LocationManager.GPS_PROVIDER, 5000, 0, locationListener);
-        }
+            }
+        };
     }
 
-    public void detachGPSListener() {
-        Log.d(TAG, "Detaching GPS listener");
-        if (locationManager != null && Variables.shouldGpsBeOff) {
-            locationManager.removeUpdates(locationListener);
+    private void startTrackingLocation() {
+        Variables.shouldGpsBeOff = true;
+        mFusedLocationClient.requestLocationUpdates
+                (getLocationRequest(),
+                        mLocationCallback,
+                        null /* Looper */);
         }
-    }
 
+
+    /*
+    Used to detect external activations from Firebase.
+     */
     @SuppressLint("MissingPermission")
     public void attachListener() {
-        group = sph.loadGroup();
-        if (Variables.alourtDatabaseReference == null) {
-            Variables.alourtDatabaseReference = FirebaseDatabase.getInstance().getReference(getString(R.string.groups_Firebase));
-        }
+        if (listener != null) {
+            group = sph.loadGroup();
+            if (Variables.alourtDatabaseReference == null) {
+                Variables.alourtDatabaseReference = FirebaseDatabase.getInstance().getReference(getString(R.string.groups_Firebase));
+            }
 
-        notifyIntent = new Intent(this, AlertPage.class);
 
-        //buckets = sph.retrieveBuckets();
-        //alertBuckets= new ArrayList<>();
-        //mobileAlerts = new ArrayList<>();
+            mobile = sph.loadMobile();
+            Log.d(TAG, "Group is: " + group + " and is creator = " + Variables.isCreator);
 
-        mobile = sph.loadMobile();
-        Log.d(TAG, "Group is: " + group + " and is creator = " + isCreator);
-
-        //for (String bucket : buckets) {
-        //temp =bucket;
-        Log.d(TAG, "Attaching listener for" + group);
-        listener = Variables.alourtDatabaseReference.child(group).addValueEventListener(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                Activator resp;
-                try {
-                    resp = dataSnapshot.child(getString(R.string.activated_Firebase)).getValue(Activator.class);
-                } catch (NullPointerException e) {
-                    resp = null;
-                }
-                Log.d(TAG, "Response from group is " + resp);
-                if (resp != null) {
-//                        alertBuckets.add(temp);
-//                        mobileAlerts.add(String.valueOf(resp));
-                    mobile = resp.getMobile();
-                    if (!isCreator) {
-                        latitude = resp.getLatitude();
-                        longitude = resp.getLongitude();
+            Log.d(TAG, "Attaching listener for" + group);
+            listener = Variables.alourtDatabaseReference.child(group).addValueEventListener(new ValueEventListener() {
+                @Override
+                public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                    Log.d(TAG, "Detected database change...");
+                    Activator resp;
+                    try {
+                        resp = dataSnapshot.child(getString(R.string.activated_Firebase)).getValue(Activator.class);
+                    } catch (NullPointerException e) {
+                        resp = null;
                     }
-                    activatorName = resp.getName();
-                    startAlertPage();
-                } else {
+                    Log.d(TAG, "Response from group is " + resp);
+                    if (resp != null) {
+                        mobile = resp.getMobile();
+                        if (!Variables.isCreator) {
+                            location = resp.getLocation();
+                            startAlertPage();
+                        }
+                        activatorName = resp.getName();
+
+                    } else {
+
+                    }
+                }
+
+                @Override
+                public void onCancelled(@NonNull DatabaseError databaseError) {
 
                 }
-            }
-
-            @Override
-            public void onCancelled(@NonNull DatabaseError databaseError) {
-
-            }
-        });
-        // }
+            });
+            // }
+        }
 
     }
 
@@ -297,7 +242,7 @@ public class AccessibilityKeyDetector extends AccessibilityService {
 
     private void startAlertPage() {
         Log.d(TAG, "Initiating alert box");
-        notifyIntent.putExtra(getString(R.string.isCreator_IntentPackage), isCreator);
+        notifyIntent = new Intent(this, AlertPage.class);
         notifyIntent.putExtra(getString(R.string.group_name_IntentPackage), group);
         notifyIntent.putExtra("activator_name", activatorName);
         notifyIntent.putExtra(getString(R.string.mobile_IntentPackage), mobile);
@@ -336,4 +281,45 @@ public class AccessibilityKeyDetector extends AccessibilityService {
             startActivity(intent);
         }
     }
+
+    private LocationRequest getLocationRequest() {
+        LocationRequest locationRequest = new LocationRequest();
+        locationRequest.setInterval(10000);
+        locationRequest.setFastestInterval(5000);
+        locationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
+        return locationRequest;
+    }
+
+
+    @Override
+    public void onTaskCompleted(String result) {
+        if (Variables.shouldGpsBeOff) {
+            if (Variables.alourtDatabaseReference == null) {
+                Variables.alourtDatabaseReference = FirebaseDatabase.getInstance().getReference(getString(R.string.groups_Firebase));
+            }
+            // Update the UI
+            Log.v(TAG, "Task response: " + result);
+            //Variables.alourtDatabaseReference.child(group).child(getString(R.string.activated_Firebase)).child("location").setValue(result);
+            Activator user;
+            location = result;
+            if (location != null && sph.loadName() != null) {
+                user = new Activator(sph.loadMobile(), location, sph.loadName());
+            } else {
+                user = new Activator(sph.loadMobile(), "NA", sph.loadName());
+            }
+            Variables.alourtDatabaseReference.child(group).child(getString(R.string.activated_Firebase)).setValue(user);
+            startAlertPage();
+            stopTrackingLocation();
+            //Variables.alourtDatabaseReference.child(group).child(getString(R.string.activated_Firebase)).child("longitude").setValue(longitude);
+        }
+    }
+
+    private void stopTrackingLocation() {
+        if (Variables.shouldGpsBeOff) {
+            Variables.shouldGpsBeOff = false;
+        }
+    }
+
+
 }
+

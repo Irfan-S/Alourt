@@ -54,13 +54,14 @@
         app:layout_constraintVertical_bias="0.085" />
 
     <com.google.android.material.chip.Chip
-        android:id="@+id/latitudetxt"
+        android:id="@+id/locationChip"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginBottom="212dp"
         android:backgroundTint="@color/colorPrimaryDark"
-        android:text="Latitude"
+        android:text="Location"
 
+        android:textAlignment="center"
         android:textColor="@color/colorAccent"
         app:layout_constraintBottom_toTopOf="@+id/stopAlertButton"
         app:layout_constraintEnd_toEndOf="parent"
@@ -69,18 +70,19 @@
         app:layout_constraintTop_toBottomOf="@+id/nameAlertTxt"
         app:layout_constraintVertical_bias="0.383" />
 
-    <com.google.android.material.chip.Chip
-        android:id="@+id/longitudetxt"
+    <TextView
+        android:id="@+id/locationtxt"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:backgroundTint="@color/colorPrimaryDark"
-        android:text="Longitude"
+        android:padding="10dp"
+        android:text="TextView"
+        android:textAlignment="center"
         android:textColor="@color/colorAccent"
-
-        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintBottom_toTopOf="@+id/stopAlertButton"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.51"
+        app:layout_constraintHorizontal_bias="0.498"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/latitudetxt"
-        app:layout_constraintVertical_bias="0.125" />
+        app:layout_constraintTop_toBottomOf="@+id/locationChip"
+        app:layout_constraintVertical_bias="0.0" />
+
 </androidx.constraintlayout.widget.ConstraintLayout>

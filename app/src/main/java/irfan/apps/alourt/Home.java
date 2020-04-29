@@ -132,54 +132,9 @@ public class Home extends AppCompatActivity implements View.OnClickListener {
     @Override
     protected void onResume() {
         super.onResume();
+        isNetworkConnected();
         updateAnimation();
     }
-
-    //    private void checkAudioPermission() {
-//        NotificationManager mNotificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-//
-//        // Check if the notification policy access has been granted for the app.
-//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-//            if (!mNotificationManager.isNotificationPolicyAccessGranted()) {
-//                setContentView(R.layout.enable_permissions_display);
-//                Intent intent = new Intent(Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS);
-//                intent.addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY);
-//                Toast.makeText(this, "Please allow Alourt to modify DND settings, for emergency notifications", Toast.LENGTH_LONG).show();
-//                startActivity(intent);
-//            }
-//        }
-//    }
-//
-//    public void checkAccessibilityPermission() {
-//        int accessEnabled = 0;
-//        try {
-//            accessEnabled = Settings.Secure.getInt(this.getContentResolver(), Settings.Secure.ACCESSIBILITY_ENABLED);
-//        } catch (Settings.SettingNotFoundException e) {
-//            e.printStackTrace();
-//        }
-//        Log.d(TAG, "Accessibility granted: " + accessEnabled);
-//        if (accessEnabled == 0) {
-//            setContentView(R.layout.enable_permissions_display);
-//            /** if not construct intent to request permission */
-//            Intent intent = new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS);
-//            intent.addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY);
-//            /** request permission via start activity for result */
-//            Toast.makeText(this, "Please allow Alourt to have accessibility, for app activation using volume buttons", Toast.LENGTH_LONG).show();
-//            startActivity(intent);
-//
-//        } else {
-//            setContentView(R.layout.activity_home);
-//        }
-//    }
-
-//
-//    @Override
-//    public boolean onKeyDown(int keyCode, KeyEvent event) {
-//        Log.d(TAG, "Key pressed");
-//        disp.setText("Key pressed is" + keyCode);
-//        return true;
-//
-//    }
 
     public void updateAnimation() {
         group = sph.loadGroup();
@@ -229,7 +184,7 @@ public class Home extends AppCompatActivity implements View.OnClickListener {
                 }
             });
         } else {
-            //Show an animation for no network.
+            //Toast.makeText(this,"No network detected",Toast.LENGTH_LONG).show();
         }
 
     }
@@ -334,6 +289,8 @@ public class Home extends AppCompatActivity implements View.OnClickListener {
 
     }
 
+
+    // TODO doesnt work
     public void isNetworkConnected() {
         try {
             ConnectivityManager connectivityManager = (ConnectivityManager) this.getSystemService(Context.CONNECTIVITY_SERVICE);

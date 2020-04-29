@@ -9,17 +9,15 @@ package irfan.apps.alourt.Utils;
 
 public class Activator {
     long mobile;
-    String latitude;
-    String longitude;
+    String location;
     String name;
 
     public Activator() {
     }
 
-    public Activator(long mobile, String latitude, String longitude, String name) {
+    public Activator(long mobile, String location, String name) {
         this.mobile = mobile;
-        this.latitude = latitude;
-        this.longitude = longitude;
+        this.location = location;
         this.name = name;
     }
 
@@ -27,12 +25,8 @@ public class Activator {
         return mobile;
     }
 
-    public String getLatitude() {
-        return latitude;
-    }
-
-    public String getLongitude() {
-        return longitude;
+    public String getLocation() {
+        return location;
     }
 
     public String getName() {

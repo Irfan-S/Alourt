@@ -41,12 +41,12 @@ import irfan.apps.alourt.Utils.Variables;
 public class AlertPage extends AppCompatActivity {
 
     //TODO create an SMS service that sends the bucket(s) the user is attached to as a body. Which is then used later on by Alourt's server. Sending credentials could be vulnerable.
+
     AudioManager audioM;
     CameraManager mCameraManager;
     TextView dispTxt;
     TextView nametxt;
-    TextView latidudeDisp;
-    TextView longitudeDisp;
+    TextView locationDisp;
     MediaPlayer mp;
     android.hardware.Camera mCamera;
     android.hardware.Camera.Parameters parameters;
@@ -55,8 +55,7 @@ public class AlertPage extends AppCompatActivity {
     SharedPrefsHandler sph;
     boolean isAdminOrCreator;
 
-    String latitude;
-    String longitude;
+    String location;
 
     String name;
     String group;
@@ -73,22 +72,17 @@ public class AlertPage extends AppCompatActivity {
         Intent in = getIntent();
         dispTxt = findViewById(R.id.alertText);
         nametxt = findViewById(R.id.nameAlertTxt);
-        latidudeDisp = findViewById(R.id.latitudetxt);
-        longitudeDisp = findViewById(R.id.longitudetxt);
+        locationDisp = findViewById(R.id.locationtxt);
         if (Variables.alourtDatabaseReference == null) {
             Variables.alourtDatabaseReference = FirebaseDatabase.getInstance().getReference(getString(R.string.groups_Firebase));
         }
-
-//        buckets = new ArrayList<>();
-//        mobiles = new ArrayList<>();
         group = in.getStringExtra(getString(R.string.group_name_IntentPackage));
         mobile = in.getLongExtra(getString(R.string.mobile_IntentPackage), 0);
         name = in.getStringExtra("activator_name");
         isAdminOrCreator = in.getBooleanExtra(getString(R.string.isCreator_IntentPackage), false);
         dispTxt.setText(mobile + " from " + group + " needs help");
         nametxt.setText("Name: " + name);
-//        latidudeDisp.setText("Last known latitude: " + latitude);
-//        longitudeDisp.setText("Last known longitude: " + longitude);
+
         sph = new SharedPrefsHandler(getApplicationContext());
         Log.d(TAG, "Activity launched");
         audioM = (AudioManager) getSystemService(AUDIO_SERVICE);
@@ -227,6 +221,7 @@ public class AlertPage extends AppCompatActivity {
     public void endNotificationCycle(View v) {
 
         //startService(new Intent(this, AccessibilityKeyDetector.class));
+        Variables.isCreator = false;
         toggleSwitch = false;
         audioOff();
         stopAlertBroadcast();
@@ -245,14 +240,14 @@ public class AlertPage extends AppCompatActivity {
 
     private void fetchLocationData() {
 
-        Variables.alourtDatabaseReference.child(group).child(getString(R.string.activated_Firebase)).addListenerForSingleValueEvent(new ValueEventListener() {
+        Variables.alourtDatabaseReference.child(group).child(getString(R.string.activated_Firebase)).addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 Log.d(TAG, "Data updated, checking.. " + dataSnapshot.getValue());
-                latitude = dataSnapshot.child("latitude").getValue(String.class);
-                longitude = dataSnapshot.child("longitude").getValue(String.class);
-                latidudeDisp.setText("Last known latitude :" + latitude);
-                longitudeDisp.setText("Last known longitude :" + longitude);
+                location = dataSnapshot.child("location").getValue(String.class);
+                //longitude = dataSnapshot.child("longitude").getValue(String.class);
+                locationDisp.setText("Last known location :" + location);
+                //longitudeDisp.setText("Last known longitude :" + longitude);
             }
 
             @Override
