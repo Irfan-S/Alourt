@@ -79,7 +79,6 @@ public class AlertPage extends AppCompatActivity {
         group = in.getStringExtra(getString(R.string.group_name_IntentPackage));
         mobile = in.getLongExtra(getString(R.string.mobile_IntentPackage), 0);
         name = in.getStringExtra("activator_name");
-        isAdminOrCreator = in.getBooleanExtra(getString(R.string.isCreator_IntentPackage), false);
         dispTxt.setText(mobile + " from " + group + " needs help");
         nametxt.setText("Name: " + name);
 
@@ -124,7 +123,7 @@ public class AlertPage extends AppCompatActivity {
         if (Variables.alourtDatabaseReference == null) {
             Variables.alourtDatabaseReference = FirebaseDatabase.getInstance().getReference(getString(R.string.groups_Firebase));
         }
-        if (isAdminOrCreator && !group.isEmpty()) {
+        if (Variables.isCreator && !group.isEmpty()) {
             Variables.alourtDatabaseReference.child(group).child(getString(R.string.activated_Firebase)).setValue(null);
         }
         finish();
