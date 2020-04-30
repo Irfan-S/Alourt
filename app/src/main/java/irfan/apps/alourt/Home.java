@@ -45,6 +45,7 @@ import irfan.apps.alourt.Handlers.PermissionHandler;
 import irfan.apps.alourt.Handlers.SharedPrefsHandler;
 import irfan.apps.alourt.Services.AccessibilityKeyDetector;
 import irfan.apps.alourt.Services.UIDGeneratorService;
+import irfan.apps.alourt.Utils.DialogUtil;
 import irfan.apps.alourt.Utils.User;
 import irfan.apps.alourt.Utils.Variables;
 
@@ -90,6 +91,15 @@ public class Home extends AppCompatActivity implements View.OnClickListener {
         isNetworkConnected();
         disp = findViewById(R.id.key_disp);
         group = sph.loadGroup();
+
+        if (sph.isNewUser()) {
+            DialogUtil dialogUtil = new DialogUtil(this);
+            dialogUtil.setCancelable(true);
+            dialogUtil.show();
+            sph.saveNewUser();
+        }
+
+
         if (Variables.alourtUser == null) {
             Variables.alourtUser = FirebaseAuth.getInstance().getCurrentUser();
         }

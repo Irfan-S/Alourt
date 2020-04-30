@@ -80,6 +80,19 @@ public class SharedPrefsHandler {
         return sharedPreferences.getString(context.getString(R.string.group_sharedpreferences), "");
     }
 
+    public void saveNewUser() {
+        SharedPreferences.Editor myEdit
+                = sharedPreferences.edit();
+        myEdit.putBoolean(
+                context.getString(R.string.newuser_sharedpreferences),
+                false);
+        myEdit.apply();
+    }
+
+    public boolean isNewUser() {
+        return sharedPreferences.getBoolean(context.getString(R.string.newuser_sharedpreferences), true);
+    }
+
 
     /**
      * Useful for multi-bucket scenarios, as of now focusing on one bucket per head

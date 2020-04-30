@@ -20,4 +20,5 @@
     <string name="mobile_IntentPackage">mobile</string>
     <string name="isCreator_IntentPackage">isCreator</string>
     <string name="group_sharedpreferences">group</string>
+    <string name="newuser_sharedpreferences">newuser</string>
 </resources>

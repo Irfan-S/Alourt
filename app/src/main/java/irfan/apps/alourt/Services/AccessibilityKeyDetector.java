@@ -221,15 +221,19 @@ public class AccessibilityKeyDetector extends AccessibilityService implements
     }
 
     private void startAlertPage() {
-        Log.d(TAG, "Initiating alert box");
-        notifyIntent = new Intent(this, AlertPage.class);
-        notifyIntent.putExtra(getString(R.string.group_name_IntentPackage), group);
-        notifyIntent.putExtra("activator_name", activatorName);
-        notifyIntent.putExtra(getString(R.string.mobile_IntentPackage), mobile);
-        notifyIntent.putExtra(getString(R.string.isCreator_IntentPackage), isCreator);
-        notifyIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        getApplicationContext().startActivity(notifyIntent);
-        Variables.alourtDatabaseReference.child(group).child(getString(R.string.activated_Firebase)).setValue(user);
+        if (group.isEmpty()) {
+            Toast.makeText(this, "Please join a group to alert others", Toast.LENGTH_LONG).show();
+        } else {
+            Log.d(TAG, "Initiating alert box");
+            notifyIntent = new Intent(this, AlertPage.class);
+            notifyIntent.putExtra(getString(R.string.group_name_IntentPackage), group);
+            notifyIntent.putExtra("activator_name", activatorName);
+            notifyIntent.putExtra(getString(R.string.mobile_IntentPackage), mobile);
+            notifyIntent.putExtra(getString(R.string.isCreator_IntentPackage), isCreator);
+            notifyIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            getApplicationContext().startActivity(notifyIntent);
+            Variables.alourtDatabaseReference.child(group).child(getString(R.string.activated_Firebase)).setValue(user);
+        }
     }
 
     @Override

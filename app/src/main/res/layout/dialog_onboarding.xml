@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?><!--
+  ~ Copyright (c) 2020 Irfan S.
+  ~ Unauthorized copying of this file, via any medium is strictly prohibited
+  ~  Proprietary and confidential
+  ~  Written by Syed Irfan Ahmed <irfansa1@ymail.com>
+  -->
+
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content"
+    android:layout_height="400dp"
+    android:orientation="vertical"
+    android:background="@drawable/ic_login_screen">
+
+    <ImageView
+        android:padding="20dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:src="@mipmap/ic_launcher" />
+
+    <TextView
+        android:padding="20dp"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:text="Welcome to Alourt.\n\n To trigger an alert, follow these steps:\n - Press the volume up button\n - Press the volume down button, within 2 seconds\n - Press the volume up button again"
+        android:textAlignment="center"
+        android:textSize="18sp"
+        android:textColor="@color/colorAccent" />
+
+
+</LinearLayout>
