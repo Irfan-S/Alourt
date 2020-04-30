@@ -53,13 +53,13 @@ public class AlertPage extends AppCompatActivity {
     private final String TAG = "AlertPage";
     private boolean toggleSwitch = true;
     SharedPrefsHandler sph;
-    boolean isAdminOrCreator;
 
     String location;
 
     String name;
     String group;
     long mobile;
+    boolean isCreator;
 
 
     @SuppressLint("MissingPermission")
@@ -77,6 +77,7 @@ public class AlertPage extends AppCompatActivity {
             Variables.alourtDatabaseReference = FirebaseDatabase.getInstance().getReference(getString(R.string.groups_Firebase));
         }
         group = in.getStringExtra(getString(R.string.group_name_IntentPackage));
+        isCreator = in.getBooleanExtra(getString(R.string.isCreator_IntentPackage), false);
         mobile = in.getLongExtra(getString(R.string.mobile_IntentPackage), 0);
         name = in.getStringExtra("activator_name");
         dispTxt.setText(mobile + " from " + group + " needs help");
@@ -119,11 +120,8 @@ public class AlertPage extends AppCompatActivity {
     }
 
     private void stopAlertBroadcast() {
-        // Write a message to the database
-        if (Variables.alourtDatabaseReference == null) {
-            Variables.alourtDatabaseReference = FirebaseDatabase.getInstance().getReference(getString(R.string.groups_Firebase));
-        }
-        if (Variables.isCreator && !group.isEmpty()) {
+        Log.d(TAG, "isCreator: " + isCreator + " and isGroupEmpty: " + group.isEmpty());
+        if (isCreator && !group.isEmpty()) {
             Variables.alourtDatabaseReference.child(group).child(getString(R.string.activated_Firebase)).setValue(null);
         }
         finish();
@@ -220,7 +218,6 @@ public class AlertPage extends AppCompatActivity {
     public void endNotificationCycle(View v) {
 
         //startService(new Intent(this, AccessibilityKeyDetector.class));
-        Variables.isCreator = false;
         toggleSwitch = false;
         audioOff();
         stopAlertBroadcast();

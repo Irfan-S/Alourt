@@ -17,7 +17,6 @@ public class Variables {
     public static boolean shouldCleanListener;
     public static FirebaseAuth alourtAuth;
     public static FirebaseUser alourtUser;
-    public static boolean isCreator = false;
     public static boolean shouldGpsBeOff = false;
     public static boolean isNetworkConnected = true;
 

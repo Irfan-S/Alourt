@@ -40,8 +40,6 @@ import irfan.apps.alourt.Utils.FetchAddressTask;
 import irfan.apps.alourt.Utils.Variables;
 
 
-//TODO location not being sent check and fix
-
 public class AccessibilityKeyDetector extends AccessibilityService implements
         FetchAddressTask.OnTaskCompleted {
 
@@ -49,6 +47,8 @@ public class AccessibilityKeyDetector extends AccessibilityService implements
     private final String TAG = "AccessKeyDetector";
     private int counter = 0;
     Intent notifyIntent;
+
+    boolean isCreator = false;
 
     String activatorName;
 
@@ -59,6 +59,7 @@ public class AccessibilityKeyDetector extends AccessibilityService implements
     private FusedLocationProviderClient mFusedLocationClient;
     private LocationCallback mLocationCallback;
 
+    Activator user;
 
     String location;
 
@@ -94,11 +95,11 @@ public class AccessibilityKeyDetector extends AccessibilityService implements
             }.start();
         } else if (counter == 5) {
             Log.d(TAG, "Triggering ringtone...");
+            activatorName = sph.loadName();
+            isCreator = true;
             checkGpsStatus();
             attachGPSListener();
             startTrackingLocation();
-            activatorName = sph.loadName();
-            Variables.isCreator = true;
             counter = 0;
         } else if (counter % 2 == 1 && event.getKeyCode() == 25) {
             counter += 2;
@@ -110,25 +111,6 @@ public class AccessibilityKeyDetector extends AccessibilityService implements
 
         return op;
     }
-
-//    /**
-//     * Sends alert message to firebase thru "activated" node for all groups the user is a part of. Attaches mobile number into node.
-//     */
-//    private void sendAlertBroadcast() {
-//        if (Variables.alourtDatabaseReference == null) {
-//            Variables.alourtDatabaseReference = FirebaseDatabase.getInstance().getReference(getString(R.string.groups_Firebase));
-//        }
-//        // Write a message to the database
-//        //for (String bucket : buckets) {
-//        Log.d(TAG,"Sending broadcast..");
-//        if (!group.isEmpty()) {
-//            checkGpsStatus();attachGPSListener();startTrackingLocation();
-//
-//
-//        }
-//
-//        //}
-//    }
 
     @Override
     protected void onServiceConnected() {
@@ -191,12 +173,9 @@ public class AccessibilityKeyDetector extends AccessibilityService implements
             if (Variables.alourtDatabaseReference == null) {
                 Variables.alourtDatabaseReference = FirebaseDatabase.getInstance().getReference(getString(R.string.groups_Firebase));
             }
-
-
             mobile = sph.loadMobile();
-            Log.d(TAG, "Group is: " + group + " and is creator = " + Variables.isCreator);
+            Log.d(TAG, "Group is: " + group + " and is creator = " + isCreator);
 
-            Log.d(TAG, "Attaching listener for" + group);
             listener = Variables.alourtDatabaseReference.child(group).addValueEventListener(new ValueEventListener() {
                 @Override
                 public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
@@ -210,7 +189,8 @@ public class AccessibilityKeyDetector extends AccessibilityService implements
                     Log.d(TAG, "Response from group is " + resp);
                     if (resp != null) {
                         mobile = resp.getMobile();
-                        if (!Variables.isCreator) {
+                        if (!isCreator) {
+                            Log.d(TAG, "Starting from notifier");
                             location = resp.getLocation();
                             startAlertPage();
                         }
@@ -246,8 +226,10 @@ public class AccessibilityKeyDetector extends AccessibilityService implements
         notifyIntent.putExtra(getString(R.string.group_name_IntentPackage), group);
         notifyIntent.putExtra("activator_name", activatorName);
         notifyIntent.putExtra(getString(R.string.mobile_IntentPackage), mobile);
+        notifyIntent.putExtra(getString(R.string.isCreator_IntentPackage), isCreator);
         notifyIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         getApplicationContext().startActivity(notifyIntent);
+        Variables.alourtDatabaseReference.child(group).child(getString(R.string.activated_Firebase)).setValue(user);
     }
 
     @Override
@@ -299,15 +281,14 @@ public class AccessibilityKeyDetector extends AccessibilityService implements
             }
             // Update the UI
             Log.v(TAG, "Task response: " + result);
+            mobile = sph.loadMobile();
             //Variables.alourtDatabaseReference.child(group).child(getString(R.string.activated_Firebase)).child("location").setValue(result);
-            Activator user;
             location = result;
             if (location != null && sph.loadName() != null) {
                 user = new Activator(sph.loadMobile(), location, sph.loadName());
             } else {
                 user = new Activator(sph.loadMobile(), "NA", sph.loadName());
             }
-            Variables.alourtDatabaseReference.child(group).child(getString(R.string.activated_Firebase)).setValue(user);
             startAlertPage();
             stopTrackingLocation();
             //Variables.alourtDatabaseReference.child(group).child(getString(R.string.activated_Firebase)).child("longitude").setValue(longitude);
