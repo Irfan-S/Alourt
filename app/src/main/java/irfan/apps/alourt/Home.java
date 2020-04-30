@@ -41,6 +41,7 @@ import java.util.List;
 import java.util.Objects;
 
 import irfan.apps.alourt.Handlers.MemberAdapter;
+import irfan.apps.alourt.Handlers.PermissionHandler;
 import irfan.apps.alourt.Handlers.SharedPrefsHandler;
 import irfan.apps.alourt.Services.AccessibilityKeyDetector;
 import irfan.apps.alourt.Services.UIDGeneratorService;
@@ -69,7 +70,7 @@ public class Home extends AppCompatActivity implements View.OnClickListener {
     private RecyclerView membersRecycler;
     private MemberAdapter memberAdapter;
     String UID;
-
+    PermissionHandler permissionHandler;
 
     ImageView img;
     Animation aniRotate;
@@ -99,12 +100,13 @@ public class Home extends AppCompatActivity implements View.OnClickListener {
         tumbleTxt = findViewById(R.id.tumbleweed_txt);
 
 
+
         if (userList == null) {
             userList = new ArrayList<>();
         }
         memberAdapter = new MemberAdapter(userList);
 
-
+        permissionHandler = new PermissionHandler(this);
         membersRecycler = findViewById(R.id.memberDisplayRecyclerView);
         RecyclerView.LayoutManager mLayoutManager = new LinearLayoutManager(getApplicationContext());
         membersRecycler.setLayoutManager(mLayoutManager);
@@ -132,6 +134,9 @@ public class Home extends AppCompatActivity implements View.OnClickListener {
     @Override
     protected void onResume() {
         super.onResume();
+        if (!permissionHandler.isAccessibilityEnabled()) {
+            permissionHandler.checkAccessibilityPermission();
+        }
         isNetworkConnected();
         updateAnimation();
     }
@@ -318,6 +323,7 @@ public class Home extends AppCompatActivity implements View.OnClickListener {
             Variables.isNetworkConnected = false;
         }
     }
+
 
 }
 

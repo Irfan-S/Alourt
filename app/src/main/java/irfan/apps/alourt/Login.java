@@ -8,13 +8,11 @@
 package irfan.apps.alourt;
 
 import android.app.AlertDialog;
-import android.app.NotificationManager;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
-import android.provider.Settings;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
@@ -42,8 +40,8 @@ import java.util.ArrayList;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
+import irfan.apps.alourt.Handlers.PermissionHandler;
 import irfan.apps.alourt.Handlers.SharedPrefsHandler;
-import irfan.apps.alourt.Services.AccessibilityKeyDetector;
 import irfan.apps.alourt.Utils.Variables;
 
 import static android.Manifest.permission.ACCESS_COARSE_LOCATION;
@@ -126,9 +124,12 @@ public class Login extends AppCompatActivity implements View.OnClickListener {
         permissions.add(ACCESS_COARSE_LOCATION);
         permissions.add(VIBRATE);
         permissionsToRequest = findUnAskedPermissions(permissions);
+
+        PermissionHandler permissionHandler = new PermissionHandler(this);
+
         //permissions.add(ACCESS_NOTIFICATION_POLICY);
-        checkAudioPermission();
-        checkAccessibilityPermission();
+        permissionHandler.checkAudioPermission();
+        permissionHandler.checkAccessibilityPermission();
         if (permissionsToRequest.size() > 0) {
             ActivityCompat.requestPermissions(this, permissionsToRequest.toArray(new String[permissionsToRequest.size()]), ALL_PERMISSIONS_RESULT);
         }
@@ -235,69 +236,6 @@ public class Login extends AppCompatActivity implements View.OnClickListener {
         mVerificationInProgress = savedInstanceState.getBoolean(KEY_VERIFY_IN_PROGRESS);
     }
 
-    private void checkAudioPermission() {
-        NotificationManager mNotificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-
-        // Check if the notification policy access has been granted for the app.
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            assert mNotificationManager != null;
-            if (!mNotificationManager.isNotificationPolicyAccessGranted()) {
-                Intent intent = new Intent(Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS);
-                intent.addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY);
-                Toast.makeText(this, "Please allow Alourt to modify DND settings, for emergency notifications", Toast.LENGTH_LONG).show();
-                startActivity(intent);
-
-            }
-        }
-    }
-
-    private void checkAccessibilityPermission() {
-        if (!isAccessibilityEnabled()) {
-            Intent intent = new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS);
-            intent.addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY);
-            // request permission via start activity for result
-            Toast.makeText(this, "Please allow Alourt to have accessibility, for app activation using volume buttons", Toast.LENGTH_LONG).show();
-            startActivity(intent);
-        }
-    }
-
-    private boolean isAccessibilityEnabled() {
-        int accessibilityEnabled = 0;
-        final String service = getPackageName() + "/" + AccessibilityKeyDetector.class.getCanonicalName();
-        try {
-            accessibilityEnabled = Settings.Secure.getInt(
-                    this.getApplicationContext().getContentResolver(),
-                    android.provider.Settings.Secure.ACCESSIBILITY_ENABLED);
-            Log.v(TAG, "accessibilityEnabled = " + accessibilityEnabled);
-        } catch (Settings.SettingNotFoundException e) {
-            Log.e(TAG, "Error finding setting, default accessibility to not found: "
-                    + e.getMessage());
-        }
-        TextUtils.SimpleStringSplitter mStringColonSplitter = new TextUtils.SimpleStringSplitter(':');
-
-        if (accessibilityEnabled == 1) {
-            Log.v(TAG, "***ACCESSIBILITY IS ENABLED*** -----------------");
-            String settingValue = Settings.Secure.getString(
-                    this.getApplicationContext().getContentResolver(),
-                    Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES);
-            if (settingValue != null) {
-                mStringColonSplitter.setString(settingValue);
-                while (mStringColonSplitter.hasNext()) {
-                    String accessibilityService = mStringColonSplitter.next();
-
-                    Log.v(TAG, "-------------- > accessibilityService :: " + accessibilityService + " " + service);
-                    if (accessibilityService.equalsIgnoreCase(service)) {
-                        Log.v(TAG, "We've found the correct setting - accessibility is switched on!");
-                        return true;
-                    }
-                }
-            }
-        } else {
-            Log.v(TAG, "***ACCESSIBILITY IS DISABLED***");
-        }
-
-        return false;
-    }
 
 
     private void startPhoneNumberVerification(String phoneNumber) {
