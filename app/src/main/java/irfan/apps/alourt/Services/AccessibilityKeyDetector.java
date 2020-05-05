@@ -26,6 +26,8 @@ import com.google.android.gms.location.LocationCallback;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationResult;
 import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
@@ -206,7 +208,6 @@ public class AccessibilityKeyDetector extends AccessibilityService implements
 
                 }
             });
-            // }
         }
 
     }
@@ -225,14 +226,26 @@ public class AccessibilityKeyDetector extends AccessibilityService implements
             Toast.makeText(this, "Please join a group to alert others", Toast.LENGTH_LONG).show();
         } else {
             Log.d(TAG, "Initiating alert box");
-            notifyIntent = new Intent(this, AlertPage.class);
-            notifyIntent.putExtra(getString(R.string.group_name_IntentPackage), group);
-            notifyIntent.putExtra("activator_name", activatorName);
-            notifyIntent.putExtra(getString(R.string.mobile_IntentPackage), mobile);
-            notifyIntent.putExtra(getString(R.string.isCreator_IntentPackage), isCreator);
-            notifyIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            getApplicationContext().startActivity(notifyIntent);
-            Variables.alourtDatabaseReference.child(group).child(getString(R.string.activated_Firebase)).setValue(user);
+
+            Variables.alourtDatabaseReference.child(group).child(getString(R.string.activated_Firebase)).setValue(user).addOnSuccessListener(new OnSuccessListener<Void>() {
+                @Override
+                public void onSuccess(Void aVoid) {
+                    notifyIntent = new Intent(getApplicationContext(), AlertPage.class);
+                    notifyIntent.putExtra(getString(R.string.group_name_IntentPackage), group);
+                    notifyIntent.putExtra("activator_name", activatorName);
+                    notifyIntent.putExtra(getString(R.string.mobile_IntentPackage), mobile);
+                    notifyIntent.putExtra(getString(R.string.isCreator_IntentPackage), isCreator);
+                    notifyIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    getApplicationContext().startActivity(notifyIntent);
+                }
+            });
+            Variables.alourtDatabaseReference.child(group).child(getString(R.string.activated_Firebase)).setValue(user).addOnFailureListener(new OnFailureListener() {
+                @Override
+                public void onFailure(@NonNull Exception e) {
+                    Toast.makeText(getApplicationContext(), "Unable to send an alert, please check your network", Toast.LENGTH_LONG).show();
+                }
+            });
+
         }
     }
 
@@ -286,7 +299,6 @@ public class AccessibilityKeyDetector extends AccessibilityService implements
             // Update the UI
             Log.v(TAG, "Task response: " + result);
             mobile = sph.loadMobile();
-            //Variables.alourtDatabaseReference.child(group).child(getString(R.string.activated_Firebase)).child("location").setValue(result);
             location = result;
             if (location != null && sph.loadName() != null) {
                 user = new Activator(sph.loadMobile(), location, sph.loadName());
@@ -295,7 +307,6 @@ public class AccessibilityKeyDetector extends AccessibilityService implements
             }
             startAlertPage();
             stopTrackingLocation();
-            //Variables.alourtDatabaseReference.child(group).child(getString(R.string.activated_Firebase)).child("longitude").setValue(longitude);
         }
     }
 

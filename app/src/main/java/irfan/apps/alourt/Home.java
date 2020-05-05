@@ -50,7 +50,7 @@ import irfan.apps.alourt.Utils.User;
 import irfan.apps.alourt.Utils.Variables;
 
 //TODO on leaving a group, create a way to remove all listeners before starting a new one.
-//TODO create animation for no network, or a new screen.
+
 
 public class Home extends AppCompatActivity implements View.OnClickListener {
 
