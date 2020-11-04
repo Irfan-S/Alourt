@@ -156,13 +156,14 @@ public class AccessibilityKeyDetector extends AccessibilityService implements
         };
     }
 
+    @SuppressLint("MissingPermission")
     private void startTrackingLocation() {
         Variables.shouldGpsBeOff = true;
         mFusedLocationClient.requestLocationUpdates
                 (getLocationRequest(),
                         mLocationCallback,
                         null /* Looper */);
-        }
+    }
 
 
     /*

@@ -145,7 +145,8 @@ public class Home extends AppCompatActivity implements View.OnClickListener {
     protected void onResume() {
         super.onResume();
         if (!permissionHandler.isAccessibilityEnabled()) {
-            permissionHandler.checkAccessibilityPermission();
+            permissionHandler.setCancelable(false);
+            permissionHandler.show();
         }
         isNetworkConnected();
         updateAnimation();
@@ -177,7 +178,7 @@ public class Home extends AppCompatActivity implements View.OnClickListener {
 
     public void updateMemberDisplay() {
         //Check if network present and if user is in group
-        if (Variables.isNetworkConnected) {
+        if (group != null) {
 
             Variables.alourtDatabaseReference.child(group).child(getString(R.string.members_Firebase)).addListenerForSingleValueEvent(new ValueEventListener() {
                 @Override

@@ -9,25 +9,34 @@
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
     android:layout_centerInParent="true"
-    android:orientation="vertical"
-    android:background="@drawable/ic_dialog_bg">
+    android:background="@drawable/ic_dialog_bg"
+    android:orientation="vertical">
 
     <ImageView
-        android:padding="20dp"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
+        android:padding="20dp"
         android:src="@mipmap/ic_launcher" />
 
     <TextView
-        android:padding="20dp"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
-        android:text="Welcome to Alourt.\n\n To trigger an alert, follow these steps:\n - Press the volume up button\n - Press the volume down button, within 2 seconds\n - Press the volume up button again"
+        android:padding="10dp"
+        android:text="Welcome to Alourt.\n\n In order to be active for SOS situations, we require accessibility permissions to use the volume buttons as triggers.\n\n We also require Do not Disturb permissions in order to be alerted about your group in case of an emergency\n  "
         android:textAlignment="center"
-        android:textSize="18sp"
-        android:textColor="@color/colorAccent" />
+        android:textColor="@color/colorAccent"
+        android:textSize="18sp" />
+
+    <Button
+        android:id="@+id/allowPermissions"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:layout_margin="20dp"
+        android:backgroundTint="@color/colorPrimary"
+        android:text="Allow" />
 
 
 </LinearLayout>

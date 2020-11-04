@@ -109,7 +109,6 @@ public class Login extends AppCompatActivity implements View.OnClickListener {
         // Assign click listeners
         mStartButton.setOnClickListener(this);
         mVerifyButton.setOnClickListener(this);
-        mResendButton.setOnClickListener(this);
 
         sharedPreferencesHandler = new SharedPrefsHandler(getApplicationContext());
 
@@ -127,9 +126,12 @@ public class Login extends AppCompatActivity implements View.OnClickListener {
 
         PermissionHandler permissionHandler = new PermissionHandler(this);
 
+        if (!permissionHandler.isAccessibilityEnabled()) {
+            permissionHandler.setCancelable(false);
+            permissionHandler.show();
+        }
+
         //permissions.add(ACCESS_NOTIFICATION_POLICY);
-        permissionHandler.checkAudioPermission();
-        permissionHandler.checkAccessibilityPermission();
         if (permissionsToRequest.size() > 0) {
             ActivityCompat.requestPermissions(this, permissionsToRequest.toArray(new String[permissionsToRequest.size()]), ALL_PERMISSIONS_RESULT);
         }
@@ -420,7 +422,8 @@ public class Login extends AppCompatActivity implements View.OnClickListener {
                 if (!validatePhoneNumber()) {
                     return;
                 }
-
+                mResendButton.setVisibility(View.VISIBLE);
+                mResendButton.setOnClickListener(this);
                 startPhoneNumberVerification(mPhoneNumberField.getText().toString());
                 break;
             case R.id.buttonVerifyPhone:

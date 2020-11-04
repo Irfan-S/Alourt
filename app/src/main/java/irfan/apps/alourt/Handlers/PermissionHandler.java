@@ -7,30 +7,50 @@
 
 package irfan.apps.alourt.Handlers;
 
+import android.app.Dialog;
 import android.app.NotificationManager;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
 import android.os.Build;
+import android.os.Bundle;
 import android.provider.Settings;
 import android.text.TextUtils;
 import android.util.Log;
+import android.view.View;
+import android.view.Window;
+import android.widget.Button;
 import android.widget.Toast;
 
+import irfan.apps.alourt.R;
 import irfan.apps.alourt.Services.AccessibilityKeyDetector;
 
 import static android.content.Context.NOTIFICATION_SERVICE;
 
-public class PermissionHandler {
+public class PermissionHandler extends Dialog implements android.view.View.OnClickListener {
 
     private Context context;
     private final String TAG = "PermissionHandler";
 
     public PermissionHandler(Context context) {
+        super(context);
         this.context = context;
+
+    }
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        requestWindowFeature(Window.FEATURE_NO_TITLE);
+        this.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+        setContentView(R.layout.dialog_permissions_request);
+        Button allow = findViewById(R.id.allowPermissions);
+        allow.setOnClickListener(this);
     }
 
 
-    public void checkAudioPermission() {
+    private void checkAudioPermission() {
         NotificationManager mNotificationManager = (NotificationManager) context.getSystemService(NOTIFICATION_SERVICE);
 
         // Check if the notification policy access has been granted for the app.
@@ -46,7 +66,7 @@ public class PermissionHandler {
         }
     }
 
-    public void checkAccessibilityPermission() {
+    private void checkAccessibilityPermission() {
         if (!isAccessibilityEnabled()) {
             Intent intent = new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS);
             intent.addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY);
@@ -92,5 +112,12 @@ public class PermissionHandler {
         }
 
         return false;
+    }
+
+    @Override
+    public void onClick(View v) {
+        checkAccessibilityPermission();
+        checkAudioPermission();
+        this.cancel();
     }
 }
